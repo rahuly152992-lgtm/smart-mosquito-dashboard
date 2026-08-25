@@ -1,0 +1,246 @@
+/*
+ * mobile_frame.css
+ * ----------------
+ * Provides a sleek smartphone presentation frame mockup with a dynamic
+ * toggle to switch between iPhone/Pixel mobile frame view and Full Responsive view.
+ */
+
+.app-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: #0b1329;
+  background-image: radial-gradient(circle at 50% 20%, rgba(2, 132, 199, 0.15), transparent 70%),
+                    radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.08), transparent 60%);
+  padding: 20px 10px 40px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+/* Presentation Bar / Mode Switcher at top */
+.presentation-bar {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 8px 16px;
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.presentation-bar .title-tag {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.presentation-bar .title-tag .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.presentation-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  background: rgba(2, 132, 199, 0.3);
+  border-color: #38bdf8;
+}
+
+/* Smartphone Device Mockup Container */
+.phone-container {
+  width: 100%;
+  max-width: 420px;
+  height: 860px;
+  background: var(--bg-surface);
+  border-radius: 44px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7),
+              0 0 0 10px #1e293b,
+              0 0 0 12px #334155,
+              0 0 30px rgba(2, 132, 199, 0.2);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  border: 4px solid #0f172a;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* iPhone Dynamic Island / Speaker Notch */
+.phone-notch {
+  width: 120px;
+  height: 26px;
+  background: #000000;
+  border-radius: 20px;
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.phone-notch .lens {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #111827;
+  border: 1px solid #1e293b;
+  position: relative;
+}
+
+.phone-notch .lens::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.6);
+}
+
+.phone-notch .speaker {
+  width: 35px;
+  height: 4px;
+  border-radius: 4px;
+  background: #1e293b;
+}
+
+/* Status Bar */
+.phone-status-bar {
+  height: 42px;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-main);
+  z-index: 999;
+  background: transparent;
+  user-select: none;
+}
+
+.status-bar-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Home Indicator Bar at Bottom */
+.phone-home-indicator {
+  width: 130px;
+  height: 4px;
+  background: var(--text-muted);
+  opacity: 0.4;
+  border-radius: 4px;
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Screen Content Area */
+.app-screen-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-main);
+}
+
+/* Fullscreen / Responsive Mode */
+body.fullscreen-mode .app-wrapper {
+  padding: 0;
+  background: var(--bg-main);
+}
+
+body.fullscreen-mode .presentation-bar {
+  max-width: 100%;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  margin-bottom: 0;
+}
+
+body.fullscreen-mode .phone-container {
+  max-width: 100%;
+  height: calc(100vh - 48px);
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+}
+
+body.fullscreen-mode .phone-notch,
+body.fullscreen-mode .phone-home-indicator {
+  display: none;
+}
+
+body.fullscreen-mode .phone-status-bar {
+  display: none;
+}
+
+@media (max-width: 500px) {
+  .app-wrapper {
+    padding: 0;
+  }
+  .presentation-bar {
+    border-radius: 0;
+    margin-bottom: 0;
+    display: none;
+  }
+  .phone-container {
+    max-width: 100%;
+    height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+  }
+  .phone-notch,
+  .phone-home-indicator {
+    display: none;
+  }
+}

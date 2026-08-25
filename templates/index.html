@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0284c7">
+  <meta name="description" content="Smart Mosquito Breeding Detection System - IoT mobile application connected to ESP32 for water-level, temperature, and humidity surveillance.">
+  <title>Smart Mosquito Breeding Detection System</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Chart.js for telemetry & history analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/mobile_frame.css">
+</head>
+<body>
+
+<div class="app-wrapper">
+  <!-- Desktop / Presentation Mode Bar -->
+  <div class="presentation-bar">
+    <div class="title-tag">
+      <span class="dot"></span>
+      <strong>IoT Mosquito Guard (ESP32)</strong>
+    </div>
+    <div class="presentation-controls">
+      <button class="mode-btn" onclick="toggleLayoutMode()" id="btn-layout-mode">
+        💻 Full Screen View
+      </button>
+      <button class="mode-btn" onclick="app.showScreen('screen-device')">
+        📡 ESP32 Status
+      </button>
+      <button class="mode-btn" onclick="app.showScreen('screen-tips')">
+        💡 Prevention
+      </button>
+    </div>
+  </div>
+
+  <!-- Smartphone Mockup Container -->
+  <div class="phone-container" id="phone-container">
+    <!-- iPhone Dynamic Island / Speaker Notch -->
+    <div class="phone-notch">
+      <div class="lens"></div>
+      <div class="speaker"></div>
+    </div>
+
+    <!-- Phone Status Bar -->
+    <div class="phone-status-bar">
+      <span id="phone-clock">09:41</span>
+      <div class="status-bar-icons">
+        <span>5G</span>
+        <span>📶</span>
+        <span>🔋 94%</span>
+      </div>
+    </div>
+
+    <!-- App Header -->
+    <header class="app-header" id="main-app-header" style="display:none;">
+      <div class="header-brand" onclick="app.showScreen('screen-home')" style="cursor:pointer;">
+        <img src="/static/images/logo.svg" alt="Mosquito Detection Logo">
+        <div class="header-brand-text">
+          <h1>Mosquito Guard</h1>
+          <span>ESP32 IoT Active</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="header-icon-btn" onclick="app.showScreen('screen-alerts')" title="Alerts">
+          🔔
+          <span class="badge" id="header-alert-badge">2</span>
+        </button>
+        <button class="header-icon-btn" onclick="app.showScreen('screen-device')" title="ESP32 Status">
+          📡
+        </button>
+      </div>
+    </header>
+
+    <!-- App Screen Container -->
+    <div class="app-screen-container">
+      
+      <!-- ====================================================================
+           1. Splash Screen
+           ==================================================================== -->
+      <section class="screen-view active" id="screen-splash">
+        <div class="splash-content">
+          <div class="splash-logo-box">
+            <img src="/static/images/logo.svg" alt="Mosquito Shield Logo">
+          </div>
+          <h1 class="splash-title">Smart Mosquito Breeding Detection</h1>
+          <p class="splash-tagline">
+            Detect Early. <span>Alert Fast.</span> Prevent Disease.
+          </p>
+          <div class="splash-loader"></div>
+          <p style="font-size:0.75rem; color:#94a3b8; margin-bottom:12px;">Connecting to ESP32 Telemetry Node...</p>
+          <button class="splash-btn" onclick="app.showScreen('screen-home'); app.startLivePolling();">
+            Enter Dashboard →
+          </button>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           2. Login & Auth Screen
+           ==================================================================== -->
+      <section class="screen-view" id="screen-login">
+        <div class="auth-card">
+          <div class="auth-header">
+            <img src="/static/images/logo.svg" alt="Logo">
+            <h2>Welcome Back</h2>
+            <p>Smart Mosquito Surveillance & Alert System</p>
+          </div>
+
+          <div class="auth-tabs">
+            <button class="auth-tab-btn active" id="tab-login-btn" onclick="switchAuthTab('login')">Sign In</button>
+            <button class="auth-tab-btn" id="tab-register-btn" onclick="switchAuthTab('register')">Create Citizen / Officer Account</button>
+          </div>
+
+          <form id="auth-form" onsubmit="event.preventDefault(); handleAuthSubmit();">
+            <div id="register-extra-fields" style="display:none;">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-input" id="reg-name" placeholder="e.g. Rajesh Sharma">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">I Am A (User Role)</label>
+                <select class="form-input" id="reg-role" style="padding-left:12px;">
+                  <option value="Resident / Citizen">🏡 Resident / Citizen (General Public)</option>
+                  <option value="Field Officer">👷 Field Officer / Health Worker</option>
+                  <option value="School / College In-charge">🏫 School / College Admin</option>
+                  <option value="Administrator">🏛️ Municipal Health Authority</option>
+                  <option value="Student Researcher">🎓 Student Researcher</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Residential Area / Sector</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-input" id="reg-area" placeholder="e.g. Green Valley, Sector 4">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email or Mobile Number</label>
+              <div class="input-wrapper">
+                <input type="text" class="form-input" id="auth-email" value="citizen.user@community.org" required placeholder="name@domain.com or 10-digit mobile">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <div class="input-wrapper">
+                <input type="password" class="form-input" id="auth-password" value="••••••••" required placeholder="Enter password">
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:0.75rem;">
+              <label style="display:flex; align-items:center; gap:6px; color:var(--text-secondary); cursor:pointer;">
+                <input type="checkbox" checked> Remember Me
+              </label>
+              <a href="#" style="color:var(--primary); font-weight:600; text-decoration:none;" onclick="app.showToast('Password reset link sent to registered email/phone!')">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="btn-primary" id="btn-auth-submit">
+              Sign In to System →
+            </button>
+          </form>
+
+          <!-- Quick One-Click Demo Role Switcher -->
+          <div class="demo-roles-box">
+            <div class="demo-roles-title">Choose Your Role to Enter</div>
+            <div class="role-chips">
+              <button class="role-chip" onclick="quickLoginAs('Resident / Citizen')">🏡 Citizen / Resident</button>
+              <button class="role-chip" onclick="quickLoginAs('Field Officer')">👷 Field Officer</button>
+              <button class="role-chip" onclick="quickLoginAs('School / College In-charge')">🏫 School / Campus</button>
+              <button class="role-chip" onclick="quickLoginAs('Administrator')">🏛️ Municipal Admin</button>
+              <button class="role-chip" onclick="quickLoginAs('Student Researcher')">🎓 Student Demo</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           3. Home Dashboard Screen
+           ==================================================================== -->
+      <section class="screen-view" id="screen-home">
+        <!-- Device Connection Strip -->
+        <div class="device-status-banner">
+          <div class="device-status-left">
+            <div class="device-dot" id="home-device-dot"></div>
+            <div>
+              <div class="device-info-title" id="home-device-name">ESP32 Mosquito Guard Node #1</div>
+              <div class="device-info-sub" id="home-device-sync">Node: ESP32-01 • Battery: 94% • Sector 4</div>
+            </div>
+          </div>
+          <span style="font-size:0.72rem; font-weight:700; color:var(--safe); background:var(--safe-light); padding:3px 8px; border-radius:10px;">ONLINE</span>
+        </div>
+
+        <!-- High-Risk Urgent Notification Banner -->
+        <div class="urgent-alert-banner" id="home-emergency-banner" onclick="app.showScreen('screen-alerts')" style="cursor:pointer;">
+          <div style="font-size:1.4rem;">⚠️</div>
+          <div>
+            <div class="urgent-banner-title">Mosquito Breeding Risk Detected!</div>
+            <div class="urgent-banner-desc">Immediate action required. Tap to inspect evidence and activate drainage pump.</div>
+          </div>
+        </div>
+
+        <!-- System Status Big Hero Card -->
+        <div class="system-status-card danger" id="home-system-status-card">
+          <div class="system-status-badge" id="home-status-badge">
+            <span>🔴</span> Breeding Risk Detected
+          </div>
+          <h2 class="system-status-headline" id="home-status-headline">🔴 BREEDING RISK DETECTED</h2>
+          <p class="system-status-desc" id="home-status-desc">
+            Stagnant water level (78%) and favorable breeding temperature (29°C) detected.
+          </p>
+          <div class="system-status-footer">
+            <span id="home-status-time">Updated: Just Now</span>
+            <span style="font-weight:700; text-decoration:underline; cursor:pointer;" onclick="app.showScreen('screen-monitor')">View Telemetry →</span>
+          </div>
+        </div>
+
+        <!-- Live Sensor 2x2 Grid -->
+        <div class="sensor-grid">
+          <!-- Water Level Card -->
+          <div class="sensor-card">
+            <div class="sensor-card-header">
+              <span class="sensor-card-title">Water Level</span>
+              <div class="sensor-icon-box water">💧</div>
+            </div>
+            <div class="sensor-value-box">
+              <span class="sensor-main-value" id="home-val-water">78.0</span>
+              <span class="sensor-unit">%</span>
+            </div>
+            <div class="sensor-progress-bar">
+              <div class="sensor-progress-fill" id="home-fill-water" style="width:78%; background:var(--danger);"></div>
+            </div>
+            <div class="sensor-card-status" id="home-status-water">
+              <span style="color:var(--danger)">⚠️ High Accumulation</span>
+            </div>
+          </div>
+
+          <!-- Temperature Card -->
+          <div class="sensor-card">
+            <div class="sensor-card-header">
+              <span class="sensor-card-title">Temperature</span>
+              <div class="sensor-icon-box temp">🌡️</div>
+            </div>
+            <div class="sensor-value-box">
+              <span class="sensor-main-value" id="home-val-temp">29.0</span>
+              <span class="sensor-unit">°C</span>
+            </div>
+            <div class="sensor-progress-bar">
+              <div class="sensor-progress-fill" id="home-fill-temp" style="width:70%; background:var(--caution);"></div>
+            </div>
+            <div class="sensor-card-status" id="home-status-temp">
+              <span style="color:var(--caution)">⚠️ Optimal Breeding Range</span>
+            </div>
+          </div>
+
+          <!-- Humidity Card -->
+          <div class="sensor-card">
+            <div class="sensor-card-header">
+              <span class="sensor-card-title">Humidity</span>
+              <div class="sensor-icon-box humidity">💨</div>
+            </div>
+            <div class="sensor-value-box">
+              <span class="sensor-main-value" id="home-val-humidity">76.0</span>
+              <span class="sensor-unit">% RH</span>
+            </div>
+            <div class="sensor-progress-bar">
+              <div class="sensor-progress-fill" id="home-fill-humidity" style="width:76%; background:var(--caution);"></div>
+            </div>
+            <div class="sensor-card-status" id="home-status-humidity">
+              <span style="color:var(--caution)">⚠️ Favorable Moisture</span>
+            </div>
+          </div>
+
+          <!-- AI Image Risk Score Card -->
+          <div class="sensor-card">
+            <div class="sensor-card-header">
+              <span class="sensor-card-title">Image Risk (AI)</span>
+              <div class="sensor-icon-box camera">📷</div>
+            </div>
+            <div class="sensor-value-box">
+              <span class="sensor-main-value" id="home-val-image">88.0</span>
+              <span class="sensor-unit">%</span>
+            </div>
+            <div class="sensor-progress-bar">
+              <div class="sensor-progress-fill" id="home-fill-image" style="width:88%; background:var(--danger);"></div>
+            </div>
+            <div class="sensor-card-status" id="home-status-image">
+              <span style="color:var(--danger)">⚠️ Larvae Detected</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alert Summary Stats Row -->
+        <div class="stats-summary-row">
+          <div class="stat-box" onclick="app.showScreen('screen-alerts')" style="cursor:pointer;">
+            <div class="stat-number" id="home-stat-today">2</div>
+            <div class="stat-label">Alerts Today</div>
+          </div>
+          <div class="stat-box" onclick="app.showScreen('screen-alerts')" style="cursor:pointer;">
+            <div class="stat-number danger" id="home-stat-active">2</div>
+            <div class="stat-label">Active Risks</div>
+          </div>
+          <div class="stat-box" onclick="app.showScreen('screen-alerts')" style="cursor:pointer;">
+            <div class="stat-number safe" id="home-stat-resolved">2</div>
+            <div class="stat-label">Resolved</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Grid -->
+        <div class="section-title-row">
+          <span class="section-title">Field Quick Actions</span>
+          <span class="section-action-link" onclick="app.showScreen('screen-device')">Hardware Mode →</span>
+        </div>
+
+        <div class="quick-actions-grid" style="grid-template-columns:repeat(4, 1fr);">
+          <div class="quick-act-btn" onclick="app.openCitizenReportModal()">
+            <div style="font-size:1.3rem;">📢</div>
+            <span>Report Spot</span>
+          </div>
+          <div class="quick-act-btn" onclick="app.showScreen('screen-monitor')">
+            <div style="font-size:1.3rem;">📊</div>
+            <span>Live Monitor</span>
+          </div>
+          <div class="quick-act-btn" onclick="app.testBuzzerSound()">
+            <div style="font-size:1.3rem;">🔔</div>
+            <span>Test Alarm</span>
+          </div>
+          <div class="quick-act-btn" onclick="app.showScreen('screen-tips')">
+            <div style="font-size:1.3rem;">🛡️</div>
+            <span>Tips Guide</span>
+          </div>
+        </div>
+
+        <!-- Quick IoT Scenario Injection for Testing -->
+        <div class="section-title-row">
+          <span class="section-title">Hardware Simulator Injection</span>
+          <span style="font-size:0.7rem; color:var(--text-muted);">Demo Control</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:20px;">
+          <button class="btn-secondary" style="color:var(--danger); border-color:var(--danger);" onclick="app.injectScenario('danger')">🔴 High Risk</button>
+          <button class="btn-secondary" style="color:var(--caution); border-color:var(--caution);" onclick="app.injectScenario('caution')">🟡 Caution</button>
+          <button class="btn-secondary" style="color:var(--safe); border-color:var(--safe);" onclick="app.injectScenario('safe')">🟢 Safe Area</button>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           4. Live Monitoring Screen
+           ==================================================================== -->
+      <section class="screen-view" id="screen-monitor">
+        <div class="section-title-row">
+          <span class="section-title">Real-Time ESP32 Telemetry</span>
+          <button class="btn-secondary" style="padding:4px 10px; font-size:0.72rem;" onclick="app.refreshData(); app.renderMonitorScreen();">
+            🔄 Refresh
+          </button>
+        </div>
+
+        <!-- Camera AI Vision Live Preview Box -->
+        <div class="camera-stream-box">
+          <img src="/static/images/larvae_sample.svg" alt="ESP32 Camera Larvae Detection">
+          <div class="camera-live-badge">
+            <span style="width:6px; height:6px; border-radius:50%; background:#fff;"></span>
+            LIVE AI DETECTION STREAM
+          </div>
+        </div>
+
+        <!-- Real-time Multi-Sensor Chart -->
+        <div class="telemetry-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:0.85rem; color:var(--text-main);">Live Sensor Stream (Chart.js)</strong>
+            <span style="font-size:0.68rem; color:var(--safe); font-weight:700;">● AUTO-UPDATING</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="liveTelemetryCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Diagnostic Metrics Table -->
+        <div class="telemetry-card">
+          <strong style="font-size:0.85rem; color:var(--text-main);">Current Sensor Diagnostics</strong>
+          <table class="pinouts-table">
+            <thead>
+              <tr>
+                <th>Sensor / Channel</th>
+                <th>GPIO</th>
+                <th>Live Reading</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Analog Water Level</td>
+                <td>GPIO 34</td>
+                <td id="mon-val-water" style="font-weight:700;">78.0%</td>
+                <td><span class="risk-badge-pill danger">CRITICAL</span></td>
+              </tr>
+              <tr>
+                <td>DHT22 Temperature</td>
+                <td>GPIO 4</td>
+                <td id="mon-val-temp" style="font-weight:700;">29.0°C</td>
+                <td><span class="risk-badge-pill caution">FAVORABLE</span></td>
+              </tr>
+              <tr>
+                <td>DHT22 Humidity</td>
+                <td>GPIO 4</td>
+                <td id="mon-val-hum" style="font-weight:700;">76.0%</td>
+                <td><span class="risk-badge-pill caution">HIGH</span></td>
+              </tr>
+              <tr>
+                <td>AI Computer Vision</td>
+                <td>ESP32-CAM</td>
+                <td id="mon-val-img" style="font-weight:700;">88.0%</td>
+                <td><span class="risk-badge-pill danger">LARVAE DETECTED</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           5. Alerts Screen
+           ==================================================================== -->
+      <section class="screen-view" id="screen-alerts">
+        <div class="urgent-alert-banner">
+          <div style="font-size:1.4rem;">⚠️</div>
+          <div>
+            <div class="urgent-banner-title">⚠️ Mosquito Breeding Risk Detected!</div>
+            <div class="urgent-banner-desc">Immediate field action required to treat stagnant water and eliminate larvae.</div>
+          </div>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="filter-chips-row">
+          <button class="filter-chip active" data-status="all">All Alerts</button>
+          <button class="filter-chip" data-status="active">🔴 Active Risks (2)</button>
+          <button class="filter-chip" data-status="resolved">🟢 Resolved (2)</button>
+        </div>
+
+        <!-- Alerts List Container -->
+        <div id="alerts-list-container">
+          <!-- Populated by app.js -->
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           6. Device Control Screen
+           ==================================================================== -->
+      <section class="screen-view" id="screen-device">
+        <div class="control-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div>
+              <h2 style="font-size:1.05rem; font-weight:800; color:var(--text-main);" id="dev-screen-name">ESP32 Mosquito Guard Node #1</h2>
+              <span style="font-size:0.72rem; color:var(--text-muted);" id="dev-screen-id">ID: ESP32-01</span>
+            </div>
+            <span style="font-size:0.7rem; font-weight:700; background:var(--safe-light); color:var(--safe); padding:4px 8px; border-radius:10px;">CONNECTED</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:var(--bg-subtle); padding:10px; border-radius:12px; font-size:0.75rem; text-align:center;">
+            <div>
+              <div style="color:var(--text-muted); font-size:0.68rem;">BATTERY</div>
+              <strong id="dev-screen-batt">94%</strong>
+            </div>
+            <div>
+              <div style="color:var(--text-muted); font-size:0.68rem;">WIFI SIGNAL</div>
+              <strong id="dev-screen-rssi">-62 dBm</strong>
+            </div>
+            <div>
+              <div style="color:var(--text-muted); font-size:0.68rem;">LAST SYNC</div>
+              <strong id="dev-screen-sync">Just Now</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sensor Pinout & Diagnostics Section -->
+        <div class="control-card">
+          <strong style="font-size:0.88rem; color:var(--text-main);">ESP32 Sensor Interface & Pin Diagnostics</strong>
+          <p style="font-size:0.74rem; color:var(--text-muted); margin-top:2px;">Real-time pinout status for all connected IoT sensors.</p>
+
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); padding:10px 12px; border-radius:10px; font-size:0.78rem;">
+              <div>
+                <strong>💧 Analog Water Level Sensor</strong>
+                <div style="color:var(--text-muted); font-size:0.7rem;">Pin: GPIO 34 (ADC1_CH6) • Range: 0-100%</div>
+              </div>
+              <span class="risk-badge-pill safe">CONNECTED</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); padding:10px 12px; border-radius:10px; font-size:0.78rem;">
+              <div>
+                <strong>🌡️ DHT22 Temperature & Humidity</strong>
+                <div style="color:var(--text-muted); font-size:0.7rem;">Pin: GPIO 4 (1-Wire Digital)</div>
+              </div>
+              <span class="risk-badge-pill safe">ACTIVE</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); padding:10px 12px; border-radius:10px; font-size:0.78rem;">
+              <div>
+                <strong>📷 ESP32-CAM AI Vision Sensor</strong>
+                <div style="color:var(--text-muted); font-size:0.7rem;">Interface: OV2640 Lens • Larvae AI</div>
+              </div>
+              <span class="risk-badge-pill safe">LIVE</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-subtle); padding:10px 12px; border-radius:10px; font-size:0.78rem;">
+              <div>
+                <strong>🔔 Active Piezo Buzzer Alarm</strong>
+                <div style="color:var(--text-muted); font-size:0.7rem;">Pin: GPIO 27 (Audible Siren Alert)</div>
+              </div>
+              <span class="risk-badge-pill safe">READY</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hardware Peripheral Test -->
+        <div class="control-card">
+          <strong style="font-size:0.88rem; color:var(--text-main);">Hardware Audio & Visual Test</strong>
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-top:10px;">
+            <button class="btn-secondary" onclick="app.testBuzzerSound()">🔔 Test Buzzer</button>
+            <button class="btn-secondary" onclick="app.showToast('🚨 RGB Warning Strobe Activated');">🚨 Test LED Strobe</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           7. History & Reports Screen
+           ==================================================================== -->
+      <section class="screen-view" id="screen-history">
+        <div class="section-title-row">
+          <span class="section-title">Historical Analytics & Trends</span>
+          <button class="btn-secondary" style="padding:4px 10px; font-size:0.72rem;" onclick="app.downloadReportCSV()">
+            📥 Export CSV
+          </button>
+        </div>
+
+        <!-- Trend Bar Chart -->
+        <div class="telemetry-card">
+          <strong style="font-size:0.85rem; color:var(--text-main);">Water Level & Breeding Risk History</strong>
+          <div class="chart-container">
+            <canvas id="historyTrendCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Risk Distribution Chart -->
+        <div class="telemetry-card">
+          <strong style="font-size:0.85rem; color:var(--text-main);">Alert Distribution Breakdown</strong>
+          <div style="height:170px; margin-top:8px;">
+            <canvas id="riskDistCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Date-wise History Table -->
+        <div class="telemetry-card">
+          <strong style="font-size:0.85rem; color:var(--text-main);">Date-Wise Telemetry Logs</strong>
+          <table class="pinouts-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Water</th>
+                <th>Temp</th>
+                <th>Hum</th>
+                <th>Risk</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- Populated by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           8. Prevention Tips Screen
+           ==================================================================== -->
+      <section class="screen-view" id="screen-tips">
+        <div class="section-title-row">
+          <span class="section-title">Mosquito Prevention Protocols</span>
+        </div>
+
+        <!-- 7 Standard Prevention Cards -->
+        <div class="tip-card">
+          <div class="tip-icon-box">🚫</div>
+          <div class="tip-content">
+            <h3>Do not allow stagnant water to collect</h3>
+            <p>Mosquitoes lay eggs exclusively in stagnant water. Ensure proper drainage in pits, puddles, and low-lying ground.</p>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <div class="tip-icon-box">🪣</div>
+          <div class="tip-content">
+            <h3>Empty buckets and containers regularly</h3>
+            <p>Empty, scrub, and dry buckets, pet water dishes, and open drums at least once every 5 days.</p>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <div class="tip-icon-box">🛢️</div>
+          <div class="tip-content">
+            <h3>Cover water storage tanks tightly</h3>
+            <p>Fit tight lids or fine wire mesh over overhead tanks, cisterns, and rain-harvesting barrels to prevent mosquito entry.</p>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <div class="tip-icon-box">🧹</div>
+          <div class="tip-content">
+            <h3>Clean and unblock drains</h3>
+            <p>Remove plastic waste, silt, and fallen leaves from storm drains and domestic drainage sumps.</p>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <div class="tip-icon-box">🛞</div>
+          <div class="tip-content">
+            <h3>Remove old tyres and plastic waste</h3>
+            <p>Discard or cover discarded automobile tyres, coconut shells, and plastic bottles which collect rainwater.</p>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <div class="tip-icon-box">🪴</div>
+          <div class="tip-content">
+            <h3>Check air coolers and flower pot trays</h3>
+            <p>Change desert cooler water weekly and empty runoff trays beneath potted plants regularly.</p>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <div class="tip-icon-box">⚡</div>
+          <div class="tip-content">
+            <h3>Take immediate action when alert is generated</h3>
+            <p>Inspect detected risk zone, activate the relay drainage pump, and apply eco-friendly larvicide (e.g. Abate/BTI).</p>
+          </div>
+        </div>
+
+        <!-- 5-Minute Safety Checklist -->
+        <div class="control-card" style="margin-top:16px;">
+          <strong style="font-size:0.88rem; color:var(--text-main);">Weekly 5-Minute Field Checklist</strong>
+          <div style="background:var(--bg-subtle); height:8px; border-radius:6px; margin:8px 0 4px; overflow:hidden;">
+            <div id="checklist-progress-fill" style="width:0%; height:100%; background:var(--primary); transition:width 0.3s;"></div>
+          </div>
+          <span style="font-size:0.68rem; color:var(--text-muted);" id="checklist-progress-text">0% Completed</span>
+
+          <div style="margin-top:10px;">
+            <label class="checklist-item">
+              <input type="checkbox" class="chk-item" id="chk-1" onchange="app.toggleChecklistItem(this)">
+              <span>Cleared rooftop and balcony drain clogs</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="chk-item" id="chk-2" onchange="app.toggleChecklistItem(this)">
+              <span>Checked air conditioner runoff pipes</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="chk-item" id="chk-3" onchange="app.toggleChecklistItem(this)">
+              <span>Added larvicide granules to persistent sumps</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" class="chk-item" id="chk-4" onchange="app.toggleChecklistItem(this)">
+              <span>Secured wire mesh over septic tank vents</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           9. Profile & Settings Screen
+           ==================================================================== -->
+      <section class="screen-view" id="screen-profile">
+        <div class="profile-card">
+          <div class="avatar-box">AV</div>
+          <h2 class="profile-name" id="prof-user-name">Dr. Alok Verma</h2>
+          <div class="profile-role-badge" id="prof-user-role">Field Officer</div>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;" id="prof-user-email">alok.verma@health.gov.in</p>
+        </div>
+
+        <div class="settings-list">
+          <div class="settings-item">
+            <span>Switch Active Role</span>
+            <select id="prof-role-select" style="padding:4px 8px; border-radius:8px; border:1px solid var(--border-color); font-size:0.78rem;" onchange="app.switchUserRole(this.value)">
+              <option value="Resident / Citizen">🏡 Resident / Citizen (General Public)</option>
+              <option value="Field Officer">👷 Field Officer / Health Worker</option>
+              <option value="School / College In-charge">🏫 School / Campus In-charge</option>
+              <option value="Administrator">🏛️ Municipal Administrator</option>
+              <option value="Student Researcher">🎓 Student Researcher</option>
+            </select>
+          </div>
+          <div class="settings-item">
+            <span>Dark Mode Theme</span>
+            <label class="switch">
+              <input type="checkbox" id="theme-toggle-chk" onchange="app.toggleDarkMode(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="settings-item">
+            <span>Audio Buzzer Alarms</span>
+            <label class="switch">
+              <input type="checkbox" checked onchange="app.toggleSoundFx(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="settings-item">
+            <span>Push Notifications</span>
+            <label class="switch">
+              <input type="checkbox" checked onchange="app.showToast('Push notification preference saved.')">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- IoT Simulation Controller in Profile -->
+        <div class="control-card">
+          <strong style="font-size:0.85rem; color:var(--text-main);">IoT Telemetry Simulator Injections</strong>
+          <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:10px;">Inject real-time scenarios for viva demonstration.</p>
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;">
+            <button class="btn-secondary" style="color:var(--danger); border-color:var(--danger);" onclick="app.injectScenario('danger')">⚡ Danger (78% Water)</button>
+            <button class="btn-secondary" style="color:var(--caution); border-color:var(--caution);" onclick="app.injectScenario('caution')">⚡ Caution (58% Water)</button>
+            <button class="btn-secondary" style="color:var(--safe); border-color:var(--safe);" onclick="app.injectScenario('safe')">⚡ Safe Area (18% Water)</button>
+            <button class="btn-secondary" onclick="app.injectScenario('reset')">🔄 Reset All Data</button>
+          </div>
+        </div>
+
+        <button class="btn-secondary" style="width:100%; color:var(--danger); border-color:var(--danger); margin-top:10px;" onclick="app.showScreen('screen-login')">
+          Log Out
+        </button>
+      </section>
+
+    </div><!-- /app-screen-container -->
+
+    <!-- ====================================================================
+         Main Bottom Navigation Bar
+         ==================================================================== -->
+    <nav class="bottom-nav" id="main-bottom-nav" style="display:none;">
+      <a class="nav-tab-item active" data-screen="screen-home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span>Home</span>
+      </a>
+      <a class="nav-tab-item" data-screen="screen-monitor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        <span>Monitor</span>
+      </a>
+      <a class="nav-tab-item" data-screen="screen-alerts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span>Alerts</span>
+        <span class="nav-tab-badge" id="nav-alerts-badge">2</span>
+      </a>
+      <a class="nav-tab-item" data-screen="screen-history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>History</span>
+      </a>
+      <a class="nav-tab-item" data-screen="screen-profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span>Profile</span>
+      </a>
+    </nav>
+
+    <!-- Phone Home Indicator Bar -->
+    <div class="phone-home-indicator"></div>
+  </div><!-- /phone-container -->
+
+  <!-- ========================================================================
+       Modals
+       ======================================================================== -->
+  
+  <!-- Alert Details Modal -->
+  <div class="modal-overlay" id="alert-details-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span style="font-size:0.72rem; color:var(--text-muted);" id="modal-alert-id">ALT-1082</span>
+          <h3 id="modal-alert-title">Mosquito Breeding Risk</h3>
+        </div>
+        <button class="modal-close-btn" onclick="app.closeModal('alert-details-modal')">✕</button>
+      </div>
+
+      <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">
+        <div>📍 Location: <strong style="color:var(--text-main);" id="modal-alert-loc">Sector 4</strong></div>
+        <div>🕒 Detected: <strong style="color:var(--text-main);" id="modal-alert-time">Today, 09:30 AM</strong></div>
+        <div>📡 Node: <strong style="color:var(--text-main);" id="modal-alert-device">ESP32-01</strong></div>
+      </div>
+
+      <!-- Telemetry breakdown -->
+      <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; background:var(--bg-subtle); padding:10px; border-radius:12px; font-size:0.75rem; margin-bottom:12px;">
+        <div>💧 Water Level: <strong id="modal-wl">78%</strong></div>
+        <div>🌡️ Temp: <strong id="modal-temp">29°C</strong></div>
+        <div>💨 Humidity: <strong id="modal-hum">76%</strong></div>
+        <div>📷 AI Risk: <strong id="modal-img">88%</strong></div>
+      </div>
+
+      <!-- Camera Evidence Thumbnail -->
+      <div style="border-radius:10px; overflow:hidden; border:1px solid var(--border-color); margin-bottom:12px;">
+        <img src="/static/images/larvae_sample.svg" alt="Larvae Evidence" style="width:100%; height:120px; object-fit:cover; display:block;">
+      </div>
+
+      <!-- Reasons Diagnosis -->
+      <div style="margin-bottom:12px;">
+        <strong style="font-size:0.8rem; color:var(--text-main);">Risk Trigger Reasons:</strong>
+        <ul style="font-size:0.74rem; color:var(--text-secondary); padding-left:18px; margin-top:4px;" id="modal-reasons-list">
+          <li>Stagnant water level (78%) exceeds threshold.</li>
+        </ul>
+      </div>
+
+      <!-- Action Log -->
+      <div style="margin-bottom:14px;">
+        <strong style="font-size:0.8rem; color:var(--text-main);">Field Actions Log:</strong>
+        <div id="modal-actions-history" style="max-height:100px; overflow-y:auto; margin-top:4px;"></div>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-primary" onclick="app.openReportActionModal()">
+          📝 Report Action Taken
+        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-secondary" onclick="app.quickResolveAlert(app.selectedAlert?.alert_id); app.closeModal('alert-details-modal');">
+            ✓ Mark as Cleaned & Resolved
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Action Modal -->
+  <div class="modal-overlay" id="report-action-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Report Field Action</h3>
+        <button class="modal-close-btn" onclick="app.closeModal('report-action-modal')">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Action Performed</label>
+        <select class="form-input" id="action-type-select">
+          <option value="Applied Abate / BTI Larvicide granules">Applied Abate / BTI Larvicide granules</option>
+          <option value="Emptied and scrubbed container dry">Emptied and scrubbed container dry</option>
+          <option value="Removed tyres, containers & plastic trash">Removed tyres, containers & plastic trash</option>
+          <option value="Installed fine mesh cover on water tank">Installed fine mesh cover on water tank</option>
+          <option value="Cleaned and unblocked sewer drainage line">Cleaned and unblocked sewer drainage line</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Field Notes / Remarks</label>
+        <textarea class="form-input" id="action-custom-note" rows="3" placeholder="Enter inspection details, volume drained, larvicide dose, etc."></textarea>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; margin-bottom:6px; color:var(--text-main);">
+          <input type="checkbox" id="action-mark-cleaned" checked> Area Cleaned & Sanitized
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; color:var(--text-main);">
+          <input type="checkbox" id="action-mark-resolved" checked> Close Alert as Resolved
+        </label>
+      </div>
+
+      <button class="btn-primary" onclick="app.submitActionReport()">
+        Submit Action Report →
+      </button>
+    </div>
+  </div>
+
+
+
+  <!-- Citizen / Normal Public Spot Report Modal -->
+  <div class="modal-overlay" id="citizen-report-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span style="font-size:0.72rem; color:var(--primary); font-weight:700;">PUBLIC CITIZEN SERVICE</span>
+          <h3 style="font-size:1.1rem; color:var(--text-main);">Report Mosquito Spot 📢</h3>
+        </div>
+        <button class="modal-close-btn" onclick="app.closeModal('citizen-report-modal')">✕</button>
+      </div>
+      <p style="font-size:0.76rem; color:var(--text-muted); margin-bottom:12px;">
+        Notice stagnant water, an uncovered tank, or heavy mosquito breeding in your neighborhood? Report it immediately to the municipal health squad.
+      </p>
+
+      <form onsubmit="event.preventDefault(); app.submitCitizenReport();">
+        <div class="form-group">
+          <label class="form-label">Breeding Hazard Type</label>
+          <select class="form-input" id="cit-hazard-type" style="padding-left:12px;">
+            <option value="Stagnant Puddle / Open Drainage Sump">💧 Stagnant Puddle / Open Drainage Sump</option>
+            <option value="Uncovered Overhead Water Storage Tank">🛢️ Uncovered Overhead Water Storage Tank</option>
+            <option value="Abandoned Tyres / Construction Waste">🛞 Abandoned Tyres / Construction Waste</option>
+            <option value="Dirty Desert Air Cooler / Flower Pots">🪴 Dirty Desert Air Cooler / Flower Pots</option>
+            <option value="School / Park Rainwater Waterlogging">🏫 School / Park Rainwater Waterlogging</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Location / Street / House Landmark</label>
+          <div class="input-wrapper">
+            <input type="text" class="form-input" id="cit-location" placeholder="e.g. Near Community Park, House #42, Sector 4" required style="padding-left:12px;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description / Remarks</label>
+          <textarea class="form-input" id="cit-desc" rows="2" placeholder="e.g. Water accumulated for past 3 days, larvae visible on water surface." style="padding-left:12px;"></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top:10px;">
+          📢 Submit Citizen Report to Health Squad
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+</div><!-- /app-wrapper -->
+
+<!-- Scripts -->
+<script src="/static/js/audio.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/app.js"></script>
+
+<script>
+  // Clock update
+  function updatePhoneClock() {
+    const el = document.getElementById("phone-clock");
+    if (el) {
+      const now = new Date();
+      el.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  }
+  setInterval(updatePhoneClock, 1000);
+  updatePhoneClock();
+
+  // Layout mode switcher
+  function toggleLayoutMode() {
+    document.body.classList.toggle("fullscreen-mode");
+    const btn = document.getElementById("btn-layout-mode");
+    if (btn) {
+      const isFull = document.body.classList.contains("fullscreen-mode");
+      btn.textContent = isFull ? "📱 Phone Frame View" : "💻 Full Screen View";
+    }
+    if (window.soundFx) window.soundFx.playClick();
+  }
+
+  // Auth helper
+  function switchAuthTab(tab) {
+    document.getElementById("tab-login-btn").className = `auth-tab-btn ${tab === 'login' ? 'active' : ''}`;
+    document.getElementById("tab-register-btn").className = `auth-tab-btn ${tab === 'register' ? 'active' : ''}`;
+    const extraFields = document.getElementById("register-extra-fields");
+    if (extraFields) {
+      extraFields.style.display = tab === 'register' ? 'block' : 'none';
+    }
+    document.getElementById("btn-auth-submit").textContent = tab === 'login' ? 'Sign In to System →' : 'Register Citizen Account →';
+  }
+
+  function handleAuthSubmit() {
+    const isRegister = document.getElementById("tab-register-btn").classList.contains("active");
+    if (isRegister) {
+      const regName = document.getElementById("reg-name").value.trim() || "Rahul Sharma (Citizen)";
+      const regRole = document.getElementById("reg-role").value || "Resident / Citizen";
+      const regArea = document.getElementById("reg-area").value.trim() || "Green Valley, Sector 4";
+      const email = document.getElementById("auth-email").value.trim() || "citizen@community.org";
+      app.user.name = regName;
+      app.user.role = regRole;
+      app.user.email = email;
+      app.user.area = regArea;
+    }
+    app.user.isLoggedIn = true;
+    app.showToast(`Welcome, ${app.user.name}! (${app.user.role})`);
+    app.showScreen("screen-home");
+    app.startLivePolling();
+  }
+
+  function quickLoginAs(role) {
+    app.switchUserRole(role);
+    app.user.isLoggedIn = true;
+    app.showToast(`Logged in as: ${app.user.name} (${role})`);
+    app.showScreen("screen-home");
+    app.startLivePolling();
+  }
+</script>
+</body>
+</html>

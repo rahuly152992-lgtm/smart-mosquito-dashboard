@@ -1,0 +1,138 @@
+[
+  {
+    "alert_id": "ALT-1082",
+    "title": "\u26a0\ufe0f Mosquito Breeding Risk Detected",
+    "device_id": "ESP32-01",
+    "location": "Sector 4 - Drainage Sump A, Green Valley",
+    "water_level": 78.0,
+    "temperature": 29.0,
+    "humidity": 76.0,
+    "image_risk_score": 88.0,
+    "risk_level": "danger",
+    "risk_score": 4,
+    "status": "active",
+    "created_at": "2026-08-24T20:09:38.469730",
+    "last_updated": "2026-08-26T00:37:39.810103",
+    "reasons": [
+      "Stagnant water level (78.0%) exceeds safety limit (70.0%)",
+      "Favorable climate: Temp 29.0\u00b0C (opt: 20.0-32.0\u00b0C) & Humidity 76.0% (min: 60.0%)",
+      "AI Vision detected mosquito larvae / pupae (Confidence: 88.0%)"
+    ],
+    "image_evidence": "/static/images/larvae_sample.svg",
+    "is_cleaned": false,
+    "actions_log": [
+      {
+        "timestamp": "2026-08-24T20:09:38.469730",
+        "actor": "System Automation (ESP32-01)",
+        "action": "Sensor threshold breach. High danger alert broadcasted."
+      },
+      {
+        "timestamp": "2026-08-24T20:23:38.469730",
+        "actor": "Municipal Control Room",
+        "action": "Dispatched Field Officer team to Sector 4."
+      }
+    ],
+    "resolved_at": null,
+    "resolved_by": null,
+    "pump_status": "ON"
+  },
+  {
+    "alert_id": "ALT-1081",
+    "title": "\ud83d\udfe1 Caution: Favourable Breeding Conditions",
+    "device_id": "ESP32-02",
+    "location": "Sector 2 - School Playground Rain Tank",
+    "water_level": 58.5,
+    "temperature": 28.0,
+    "humidity": 72.0,
+    "image_risk_score": 45.0,
+    "risk_level": "caution",
+    "risk_score": 1,
+    "status": "active",
+    "created_at": "2026-08-24T17:33:38.469730",
+    "last_updated": "2026-08-24T19:33:38.469730",
+    "reasons": [
+      "Water level rising towards threshold (58.5%)",
+      "Atmospheric humidity is high (72.0%)"
+    ],
+    "image_evidence": "/static/images/water_tank_sample.svg",
+    "is_cleaned": false,
+    "actions_log": [
+      {
+        "timestamp": "2026-08-24T17:33:38.469730",
+        "actor": "System Automation",
+        "action": "Caution threshold triggered."
+      }
+    ],
+    "resolved_at": null,
+    "resolved_by": null
+  },
+  {
+    "alert_id": "ALT-1080",
+    "title": "\u26a0\ufe0f Mosquito Breeding Risk Detected (Resolved)",
+    "device_id": "ESP32-01",
+    "location": "Sector 4 - Commercial Plaza Cooling Tower",
+    "water_level": 82.0,
+    "temperature": 30.5,
+    "humidity": 80.0,
+    "image_risk_score": 92.0,
+    "risk_level": "danger",
+    "risk_score": 3,
+    "status": "resolved",
+    "created_at": "2026-08-23T15:33:38.469730",
+    "last_updated": "2026-08-23T18:33:38.469730",
+    "reasons": [
+      "High stagnant water depth in cooling basin",
+      "Severe larvae presence identified by vision sensor"
+    ],
+    "image_evidence": "/static/images/larvae_sample.svg",
+    "is_cleaned": true,
+    "actions_log": [
+      {
+        "timestamp": "2026-08-23T15:33:38.469730",
+        "actor": "System Automation",
+        "action": "High danger alert initiated."
+      },
+      {
+        "timestamp": "2026-08-23T17:33:38.469730",
+        "actor": "Field Officer Alok Verma",
+        "action": "Applied Abate larvicide granules and cleaned cooling basin."
+      },
+      {
+        "timestamp": "2026-08-23T18:33:38.469730",
+        "actor": "Field Officer Alok Verma",
+        "action": "Marked as Resolved: Area cleaned and sanitized."
+      }
+    ],
+    "resolved_at": "2026-08-23T18:33:38.469730",
+    "resolved_by": "Field Officer Alok Verma"
+  },
+  {
+    "alert_id": "ALT-1079",
+    "title": "\ud83d\udfe1 Caution: Stagnant Water Accumulation (Resolved)",
+    "device_id": "ESP32-03",
+    "location": "Community Park - Fountain Reservoir",
+    "water_level": 62.0,
+    "temperature": 27.0,
+    "humidity": 68.0,
+    "image_risk_score": 38.0,
+    "risk_level": "caution",
+    "risk_score": 1,
+    "status": "resolved",
+    "created_at": "2026-08-22T12:33:38.469730",
+    "last_updated": "2026-08-22T16:33:38.469730",
+    "reasons": [
+      "Stagnant water accumulation following rain"
+    ],
+    "image_evidence": "/static/images/water_tank_sample.svg",
+    "is_cleaned": true,
+    "actions_log": [
+      {
+        "timestamp": "2026-08-22T16:33:38.469730",
+        "actor": "Municipal Health Worker",
+        "action": "Fountain basin cleaned and covered with mesh net."
+      }
+    ],
+    "resolved_at": "2026-08-22T16:33:38.469730",
+    "resolved_by": "Municipal Health Worker"
+  }
+]

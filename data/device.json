@@ -1,0 +1,16 @@
+{
+  "device_id": "ESP32-01",
+  "device_name": "ESP32 Mosquito Guard Node #1",
+  "location": "Sector 4 - Drainage Sump A, Green Valley",
+  "latitude": 19.1663,
+  "longitude": 72.8526,
+  "status": "connected",
+  "battery_level": 94,
+  "power_source": "Solar + USB-C 5V",
+  "wifi_rssi": -62,
+  "buzzer_state": "ACTIVE",
+  "led_state": "RED",
+  "last_sync": "2026-08-26T00:37:39.804097",
+  "firmware_version": "v2.4-ESP32-AI",
+  "pump_state": "ON"
+}
