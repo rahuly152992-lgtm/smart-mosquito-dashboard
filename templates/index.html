@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0284c7">
   <meta name="description" content="Smart Mosquito Breeding Detection System - IoT mobile application connected to ESP32 for water-level, temperature, and humidity surveillance.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Mosquito Guard">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/static/images/logo.svg">
   <title>Smart Mosquito Breeding Detection System</title>
 
   <!-- Google Fonts -->
@@ -981,6 +987,13 @@
     app.showToast(`Logged in as: ${app.user.name} (${role})`);
     app.showScreen("screen-home");
     app.startLivePolling();
+  }
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/static/service-worker.js");
+    });
   }
 </script>
 </body>

@@ -1,0 +1,19 @@
+{
+  "name": "Smart Mosquito Breeding Detection System",
+  "short_name": "Mosquito Guard",
+  "description": "AI and IoT dashboard for GPS-tagged mosquito breeding spot alerts.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "/static/images/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
