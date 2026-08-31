@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   build:
@@ -33,13 +32,16 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Check Flutter Version
-        run: flutter --version
+      - name: Verify Flutter & Java
+        run: |
+          flutter --version
+          java -version
 
-      - name: Scaffold & Repair Android Build Files
+      - name: Clean & Re-scaffold Official Android Project
         run: |
           cd mobile_app
-          flutter create . --platforms=android --org=com.mosquitoguard
+          rm -rf android
+          flutter create --org com.mosquitoguard --project-name mosquito_guard --platforms android .
           flutter pub get
 
       - name: Build Android Release APK
