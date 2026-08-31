@@ -7,6 +7,10 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build:
     name: Build Release APK
@@ -32,9 +36,10 @@ jobs:
       - name: Check Flutter Version
         run: flutter --version
 
-      - name: Install Dependencies
+      - name: Scaffold & Repair Android Build Files
         run: |
           cd mobile_app
+          flutter create . --platforms=android --org=com.mosquitoguard
           flutter pub get
 
       - name: Build Android Release APK
@@ -53,7 +58,7 @@ jobs:
           path: mobile_app/build/app/outputs/flutter-apk/MosquitoGuard-v1.0.0.apk
           retention-days: 30
 
-      - name: Create GitHub Release (On Main Branch Push)
+      - name: Create GitHub Release
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
