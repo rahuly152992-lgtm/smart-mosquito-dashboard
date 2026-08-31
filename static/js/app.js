@@ -68,9 +68,12 @@ class MosquitoApp {
     if (bottomNav) bottomNav.style.display = (isSplash || isLogin) ? "none" : "flex";
     if (appHeader) appHeader.style.display = (isSplash || isLogin) ? "none" : "flex";
 
-    // Play click sound
-    if (!isSplash && window.soundFx) {
-      window.soundFx.playClick();
+    // Play click sound & haptic vibration feedback
+    if (!isSplash) {
+      if (window.soundFx) window.soundFx.playClick();
+      if (navigator.vibrate) {
+        try { navigator.vibrate(10); } catch(e) {}
+      }
     }
 
     // On-demand screen re-renders
