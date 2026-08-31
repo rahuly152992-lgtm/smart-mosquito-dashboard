@@ -1020,6 +1020,16 @@
     if (window.app) window.app.showToast("🎉 Mosquito Guard installed successfully!");
   });
 
+  // Auto-detect mobile devices and standalone mode to enforce 100% native full-screen layout
+  (function initMobileView() {
+    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                  || window.matchMedia('(display-mode: standalone)').matches 
+                  || window.innerWidth <= 1024;
+    if (isMobile) {
+      document.body.classList.add("fullscreen-mode", "native-mobile-mode");
+    }
+  })();
+
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("/static/service-worker.js").catch(console.error);

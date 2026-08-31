@@ -1,4 +1,4 @@
-const CACHE_NAME = "mosquito-guard-shell-v1";
+const CACHE_NAME = "mosquito-guard-shell-v2";
 const APP_SHELL = [
   "/",
   "/static/css/style.css",
