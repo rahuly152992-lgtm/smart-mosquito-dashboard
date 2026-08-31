@@ -1,0 +1,65 @@
+📱 MOSQUITO GUARD ANDROID APP - BUILD GUIDE
+===========================================
+
+Since Flutter is not installed, here are two options:
+
+OPTION 1: Build with Pre-made Gradle (Recommended)
+==================================================
+
+1. Install Android SDK:
+   - Download: https://developer.android.com/studio
+   - Install Android Studio
+   - Install SDK Platform 34 (Android 14)
+
+2. Navigate to app:
+   cd mosquito_dashboard_app\mosquito_mobile_app\android
+
+3. Build APK using Gradle:
+   # Windows
+   .\gradlew.bat build
+   
+   # Output: app\build\outputs\apk\release\app-release.apk
+
+OPTION 2: Build with Flutter (Recommended)
+===========================================
+
+1. Install Flutter:
+   - Download: https://flutter.dev/docs/get-started/install
+   - Extract to C:\flutter
+   - Add to PATH: C:\flutter\bin
+
+2. Verify installation:
+   flutter doctor
+
+3. Navigate to app:
+   cd mosquito_dashboard_app\mosquito_mobile_app
+
+4. Get dependencies:
+   flutter pub get
+
+5. Build Release APK:
+   flutter build apk --release
+   
+   # Output: build/app/outputs/flutter-app.apk
+
+6. Build App Bundle (for Play Store):
+   flutter build appbundle --release
+   
+   # Output: build/app/outputs/bundle/release/app-release.aab
+
+OPTION 3: Pre-built APK Simulator (For Testing)
+================================================
+
+If you just want to TEST the app without building:
+
+1. Download Android Studio
+2. Launch Android Emulator
+3. Use this to test the app quickly
+
+NEXT STEPS
+==========
+
+Choose one option above and follow the steps.
+
+For QUICK START → Choose OPTION 2 (Flutter)
+For QUICK TEST → Choose OPTION 3 (Emulator)

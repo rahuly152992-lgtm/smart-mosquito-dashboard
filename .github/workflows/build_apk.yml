@@ -1,0 +1,78 @@
+name: Build Android APK (Mosquito Guard)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Check Flutter Version
+        run: flutter --version
+
+      - name: Install Dependencies
+        run: |
+          cd mobile_app
+          flutter pub get
+
+      - name: Build Android Release APK
+        run: |
+          cd mobile_app
+          flutter build apk --release --no-tree-shake-icons
+
+      - name: Rename APK for Easy Identification
+        run: |
+          cp mobile_app/build/app/outputs/flutter-apk/app-release.apk mobile_app/build/app/outputs/flutter-apk/MosquitoGuard-v1.0.0.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MosquitoGuard-Android-APK
+          path: mobile_app/build/app/outputs/flutter-apk/MosquitoGuard-v1.0.0.apk
+          retention-days: 30
+
+      - name: Create GitHub Release (On Main Branch Push)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-${{ github.run_number }}
+          name: Mosquito Guard App v1.0.0 (Build ${{ github.run_number }})
+          body: |
+            ## 📱 Mosquito Guard Mobile App (Release Build)
+            
+            - **App Name:** Mosquito Guard
+            - **Version:** 1.0.0
+            - **Build Number:** ${{ github.run_number }}
+            - **File:** `MosquitoGuard-v1.0.0.apk`
+            
+            ### 📥 Installation Instructions:
+            1. Download the `MosquitoGuard-v1.0.0.apk` file below on your Android phone.
+            2. Tap on the downloaded APK to install.
+            3. If prompted, allow "Install from unknown sources".
+            4. Open the app and connect to your ESP32 device / Live Dashboard!
+          files: mobile_app/build/app/outputs/flutter-apk/MosquitoGuard-v1.0.0.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true

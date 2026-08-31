@@ -44,6 +44,9 @@
       <button class="mode-btn" onclick="app.showScreen('screen-tips')">
         💡 Prevention
       </button>
+      <button class="mode-btn" id="btn-install-app" style="background:#0284c7; color:#fff; display:none;">
+        📲 Install App
+      </button>
     </div>
   </div>
 
@@ -991,9 +994,35 @@
   }
 </script>
 <script>
+  let deferredPrompt = null;
+  const installBtn = document.getElementById("btn-install-app");
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBtn) {
+      installBtn.style.display = "inline-flex";
+      installBtn.addEventListener("click", async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === "accepted") {
+            installBtn.style.display = "none";
+          }
+          deferredPrompt = null;
+        }
+      });
+    }
+  });
+
+  window.addEventListener("appinstalled", () => {
+    if (installBtn) installBtn.style.display = "none";
+    if (window.app) window.app.showToast("🎉 Mosquito Guard installed successfully!");
+  });
+
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/static/service-worker.js");
+      navigator.serviceWorker.register("/static/service-worker.js").catch(console.error);
     });
   }
 </script>
