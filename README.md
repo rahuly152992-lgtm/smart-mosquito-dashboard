@@ -42,6 +42,8 @@ mosquito_dashboard_app/
 
 ## 🚀 How to Run the Application
 
+This project is now designed as a mobile-first application, so the interface fills the screen like a native app on desktop as well as on phone-sized screens.
+
 ### 1. Start the Flask Backend Server
 Open a terminal in the `mosquito_dashboard` directory:
 

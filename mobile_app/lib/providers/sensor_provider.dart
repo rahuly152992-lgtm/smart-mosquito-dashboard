@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import '../services/api_service.dart';
 
 class SensorProvider extends ChangeNotifier {
@@ -21,31 +22,46 @@ class SensorProvider extends ChangeNotifier {
   List<dynamic> get records => _records;
 
   /// Check if hardware is connected and fetch latest data
-  Future<void> checkAndFetchData() async {
+  /// Uses health check first for faster feedback on slow backends
+  Future<void> checkAndFetchData({bool isInitialLoad = false}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      // First check if connected
-      final connected = await _apiService.checkConnection();
+      // First do a health check (very fast, <1s)
+      // This tells us if server is alive even if it's slow
+      final isHealthy = await _apiService.checkHealth();
       
-      if (!connected) {
+      if (!isHealthy && !isInitialLoad) {
         _isConnected = false;
-        _error = 'Hardware not connected';
+        _error = 'Backend not responding';
         _isLoading = false;
         notifyListeners();
         return;
       }
 
-      // Fetch latest data
-      final data = await _apiService.getLatestReading();
+      // Now fetch the actual data with reasonable timeout
+      final data = await _apiService.getLatestReading().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          // If timeout, check if we have cached data
+          final cached = _apiService.getCachedData();
+          if (cached != null) {
+            return cached;
+          }
+          throw TimeoutException('Connection timeout - backend is slow to respond');
+        },
+      );
       
       _latestReading = data['record'] as Map<String, dynamic>?;
       _deviceStatus = data['device'] as Map<String, dynamic>?;
       _isConnected = true;
       _error = null;
       
+    } on TimeoutException catch (e) {
+      _isConnected = false;
+      _error = e.message;
     } catch (e) {
       _isConnected = false;
       _error = e.toString();

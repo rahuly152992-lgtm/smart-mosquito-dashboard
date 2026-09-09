@@ -12,32 +12,17 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
-  background: var(--bg-main, #0f172a);
+  background: var(--bg-main, #f8fafc);
   padding: 0;
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
-/* Presentation Bar / Mode Switcher at top - ONLY for large desktop screens */
+/* Mobile-first app shell default. Desktop presentation controls are hidden unless explicitly enabled. */
 .presentation-bar {
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 12px 0;
-  padding: 8px 16px;
-  background: rgba(30, 41, 59, 0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: #e2e8f0;
-  font-size: 0.85rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 100;
-  transition: all 0.3s ease;
+  display: none !important;
 }
 
 .presentation-bar .title-tag {
@@ -81,10 +66,10 @@
   border-color: #38bdf8;
 }
 
-/* Smartphone Device Mockup Container (Desktop default) */
+/* Native mobile app container: full width and full height by default. */
 .phone-container {
   width: 100%;
-  max-width: 440px;
+  max-width: 100%;
   height: 100vh;
   height: 100dvh;
   background: var(--bg-surface, #ffffff);
@@ -123,21 +108,21 @@
   background: var(--bg-main, #f8fafc);
 }
 
-/* On Desktop Large Screens - Center phone cleanly without harsh borders */
+/* Desktop keeps the same mobile-first behavior to match a native app. */
 @media (min-width: 1025px) {
   .app-wrapper {
-    padding: 20px 0;
-    background: #0b1329;
-    background-image: radial-gradient(circle at 50% 20%, rgba(2, 132, 199, 0.15), transparent 70%),
-                      radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.08), transparent 60%);
+    padding: 0;
+    background: var(--bg-main);
   }
 
   .phone-container {
-    height: 880px;
-    border-radius: 36px;
-    border: 4px solid #1e293b;
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7),
-                0 0 30px rgba(2, 132, 199, 0.2);
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
   }
 
   body.fullscreen-mode .app-wrapper {
@@ -147,8 +132,8 @@
 
   body.fullscreen-mode .phone-container {
     max-width: 100%;
-    height: calc(100vh - 48px);
-    height: calc(100dvh - 48px);
+    height: 100vh;
+    height: 100dvh;
     border-radius: 0;
     box-shadow: none;
     border: none;
@@ -204,5 +189,19 @@
   .app-screen-container {
     width: 100% !important;
     height: 100% !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-wrapper,
+  .phone-container,
+  .app-screen-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .phone-container {
+    height: 100dvh;
   }
 }

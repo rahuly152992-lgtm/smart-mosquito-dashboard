@@ -1448,6 +1448,117 @@ input:checked + .slider:before { transform: translateX(20px); }
   animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+@media (max-width: 600px) {
+  html,
+  body,
+  .app-wrapper,
+  .phone-container,
+  .app-screen-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .screen-view {
+    min-width: 0;
+    padding: 12px 12px calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-header {
+    height: auto;
+    min-height: 56px;
+    padding: 8px 12px;
+  }
+
+  .header-brand-text h1 {
+    font-size: 0.92rem;
+  }
+
+  .header-brand-text span {
+    font-size: 0.6rem;
+  }
+
+  .device-status-banner,
+  .urgent-alert-banner,
+  .system-status-footer,
+  .section-title-row {
+    align-items: flex-start;
+  }
+
+  .device-status-banner,
+  .system-status-footer,
+  .section-title-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .device-status-left,
+  .urgent-alert-banner > div:last-child {
+    min-width: 0;
+  }
+
+  .device-info-title,
+  .device-info-sub,
+  .urgent-banner-title,
+  .urgent-banner-desc,
+  .section-title {
+    overflow-wrap: anywhere;
+  }
+
+  .sensor-grid,
+  .stats-summary-row {
+    gap: 8px;
+  }
+
+  .sensor-card {
+    min-width: 0;
+    padding: 12px 10px;
+  }
+
+  .sensor-card-title,
+  .sensor-card-status,
+  .stat-label {
+    overflow-wrap: anywhere;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .alert-telemetry-pills,
+  .alert-item-actions {
+    flex-wrap: wrap;
+  }
+
+  .alert-telemetry-pills span,
+  .alert-item-actions > * {
+    min-width: 0;
+  }
+
+  .telemetry-card,
+  .control-card,
+  .auth-card,
+  .modal-card {
+    max-width: 100%;
+    padding: 14px;
+  }
+
+  .pinouts-table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  .splash-content {
+    width: min(100%, 20rem);
+  }
+
+  .splash-title {
+    font-size: clamp(1.35rem, 7vw, 1.5rem);
+  }
+}
+
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1502,6 +1613,7 @@ body.dark-mode .bottom-nav {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  pointer-events: auto;
 }
 
 .nav-tab-item svg {

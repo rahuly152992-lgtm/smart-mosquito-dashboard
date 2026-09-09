@@ -17,6 +17,51 @@ import data_store
 app = Flask(__name__)
 app.config["SECRET_KEY"] = config.SECRET_KEY
 
+# Cache for faster responses
+_latest_cache = {"data": None, "time": 0}
+_cache_ttl = 5  # seconds
+
+
+def _get_cached_latest():
+    """Get cached latest data or fetch fresh."""
+    import time
+    current_time = time.time()
+    
+    # Return cache if fresh
+    if _latest_cache["data"] and (current_time - _latest_cache["time"]) < _cache_ttl:
+        return _latest_cache["data"]
+    
+    # Fetch fresh data
+    try:
+        record = data_store.get_latest_record()
+        device = data_store.get_device_status()
+        
+        result = {
+            "record": record or {},
+            "device": device or {},
+            "backend": "firebase" if data_store.USING_FIREBASE else "local-storage"
+        }
+        
+        # Update cache
+        _latest_cache["data"] = result
+        _latest_cache["time"] = current_time
+        
+        return result
+    except Exception:
+        # Return cached data if fetch fails
+        return _latest_cache["data"] or {"record": {}, "device": {}, "backend": "local-storage"}
+
+
+# Health check - lightweight endpoint for connection verification
+@app.route("/api/health", methods=["GET"])
+def api_health():
+    """Lightweight health check - responds immediately on startup."""
+    return jsonify({
+        "status": "ok",
+        "service": "mosquito-guard",
+        "timestamp": datetime.now().isoformat()
+    }), 200
+
 
 # -----------------------------------------------------------------------------
 # Web Page Route
@@ -37,16 +82,7 @@ def dashboard():
 @app.route("/api/latest", methods=["GET"])
 def api_latest():
     """Returns the latest sensor reading, active risk status, and device metadata."""
-    record = data_store.get_latest_record()
-    device = data_store.get_device_status()
-    stats = data_store.get_system_stats()
-    
-    return jsonify({
-        "record": record or {},
-        "device": device or {},
-        "stats": stats or {},
-        "backend": "firebase" if data_store.USING_FIREBASE else "local-storage"
-    })
+    return jsonify(_get_cached_latest())
 
 
 @app.route("/api/records", methods=["GET"])
@@ -277,17 +313,6 @@ def api_config():
         "image_risk_threshold": config.IMAGE_RISK_THRESHOLD,
         "danger_level": config.DANGER_LEVEL,
         "caution_level": config.CAUTION_LEVEL,
-    })
-
-
-@app.route("/api/health")
-def api_health():
-    return jsonify({
-        "status": "healthy",
-        "system": "Smart Mosquito Breeding Detection System",
-        "version": "2.4.0",
-        "backend": "firebase" if data_store.USING_FIREBASE else "local-json",
-        "timestamp": datetime.now().isoformat()
     })
 
 

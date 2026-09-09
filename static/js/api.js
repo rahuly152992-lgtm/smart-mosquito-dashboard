@@ -7,12 +7,40 @@
 
 const API = {
   baseUrl: "",
+  requestTimeoutMs: 10000,
+  maxRetries: 4,
+
+  async _fetchJson(path, options = {}) {
+    let lastError;
+
+    for (let attempt = 0; attempt <= this.maxRetries; attempt += 1) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeoutMs);
+
+      try {
+        const res = await fetch(`${this.baseUrl}${path}`, { ...options, signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return await res.json();
+      } catch (err) {
+        lastError = err;
+        if (attempt === this.maxRetries) break;
+
+        const retryNumber = attempt + 1;
+        if (window.app && typeof window.app.setBackendStatus === "function") {
+          window.app.setBackendStatus(`Backend is waking up... retrying (${retryNumber}/${this.maxRetries})`);
+        }
+        await new Promise(resolve => setTimeout(resolve, Math.min(1500 * (2 ** attempt), 8000)));
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    throw lastError;
+  },
 
   async getLatest() {
     try {
-      const res = await fetch(`${this.baseUrl}/api/latest`);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return await res.json();
+      return await this._fetchJson("/api/latest");
     } catch (err) {
       console.warn("API getLatest error, using cached/fallback state:", err);
       return null;
@@ -22,9 +50,7 @@ const API = {
   async getRecords(risk = "all", timeRange = "all", limit = 50) {
     try {
       const url = `${this.baseUrl}/api/records?risk=${encodeURIComponent(risk)}&time_range=${encodeURIComponent(timeRange)}&limit=${limit}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return await res.json();
+      return await this._fetchJson(url);
     } catch (err) {
       console.warn("API getRecords error:", err);
       return [];
@@ -33,9 +59,7 @@ const API = {
 
   async getAlerts(status = "all") {
     try {
-      const res = await fetch(`${this.baseUrl}/api/alerts?status=${encodeURIComponent(status)}`);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return await res.json();
+      return await this._fetchJson(`/api/alerts?status=${encodeURIComponent(status)}`);
     } catch (err) {
       console.warn("API getAlerts error:", err);
       return [];
@@ -44,9 +68,7 @@ const API = {
 
   async getAlertDetails(alertId) {
     try {
-      const res = await fetch(`${this.baseUrl}/api/alerts/${encodeURIComponent(alertId)}`);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return await res.json();
+      return await this._fetchJson(`/api/alerts/${encodeURIComponent(alertId)}`);
     } catch (err) {
       console.warn("API getAlertDetails error:", err);
       return null;
@@ -55,12 +77,11 @@ const API = {
 
   async resolveAlert(alertId, resolvedBy, note) {
     try {
-      const res = await fetch(`${this.baseUrl}/api/alerts/${encodeURIComponent(alertId)}/resolve`, {
+      return await this._fetchJson(`/api/alerts/${encodeURIComponent(alertId)}/resolve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resolved_by: resolvedBy, note: note })
       });
-      return await res.json();
     } catch (err) {
       console.error("API resolveAlert error:", err);
       return { success: false, error: err.message };
@@ -69,7 +90,7 @@ const API = {
 
   async logAlertAction(alertId, actor, note, markCleaned = false, markResolved = false) {
     try {
-      const res = await fetch(`${this.baseUrl}/api/alerts/${encodeURIComponent(alertId)}/action`, {
+      return await this._fetchJson(`/api/alerts/${encodeURIComponent(alertId)}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -79,7 +100,6 @@ const API = {
           mark_resolved: markResolved
         })
       });
-      return await res.json();
     } catch (err) {
       console.error("API logAlertAction error:", err);
       return { success: false, error: err.message };
@@ -88,9 +108,7 @@ const API = {
 
   async getDevice() {
     try {
-      const res = await fetch(`${this.baseUrl}/api/device`);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return await res.json();
+      return await this._fetchJson("/api/device");
     } catch (err) {
       console.warn("API getDevice error:", err);
       return null;
@@ -99,12 +117,11 @@ const API = {
 
   async controlPump(mode, state) {
     try {
-      const res = await fetch(`${this.baseUrl}/api/pump/control`, {
+      return await this._fetchJson("/api/pump/control", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: mode, state: state })
       });
-      return await res.json();
     } catch (err) {
       console.error("API controlPump error:", err);
       return { success: false, error: err.message };
@@ -113,12 +130,11 @@ const API = {
 
   async simulate(scenario) {
     try {
-      const res = await fetch(`${this.baseUrl}/api/simulate`, {
+      return await this._fetchJson("/api/simulate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ scenario: scenario })
       });
-      return await res.json();
     } catch (err) {
       console.error("API simulate error:", err);
       return { success: false, error: err.message };
@@ -127,9 +143,7 @@ const API = {
 
   async getStats() {
     try {
-      const res = await fetch(`${this.baseUrl}/api/stats`);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return await res.json();
+      return await this._fetchJson("/api/stats");
     } catch (err) {
       console.warn("API getStats error:", err);
       return null;
@@ -138,8 +152,7 @@ const API = {
 
   async getConfig() {
     try {
-      const res = await fetch(`${this.baseUrl}/api/config`);
-      return await res.json();
+      return await this._fetchJson("/api/config");
     } catch (err) {
       return null;
     }
@@ -147,12 +160,11 @@ const API = {
 
   async saveConfig(configData) {
     try {
-      const res = await fetch(`${this.baseUrl}/api/config`, {
+      return await this._fetchJson("/api/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(configData)
       });
-      return await res.json();
     } catch (err) {
       return { error: err.message };
     }

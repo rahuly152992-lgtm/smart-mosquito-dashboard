@@ -31,6 +31,15 @@ class MosquitoGuardApp extends StatelessWidget {
         ),
         home: const AppHome(),
         debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          // Constrain app to mobile dimensions (max 430px width)
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 430),
+              child: child!,
+            ),
+          );
+        },
       ),
     );
   }

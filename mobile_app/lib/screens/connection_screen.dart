@@ -10,18 +10,36 @@ class ConnectionScreen extends StatefulWidget {
 }
 
 class _ConnectionScreenState extends State<ConnectionScreen> {
+  bool _showingRetry = false;
+  int _retryCount = 0;
+  
   @override
   void initState() {
     super.initState();
     // Try to connect when screen loads
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 300), () {
       _checkConnection();
     });
   }
 
   void _checkConnection() async {
     if (!mounted) return;
-    await context.read<SensorProvider>().checkAndFetchData();
+    
+    _retryCount++;
+    setState(() {
+      _showingRetry = true;
+    });
+    
+    await context.read<SensorProvider>().checkAndFetchData(isInitialLoad: true);
+    
+    // After 3 seconds, if still not connected, show retry button
+    await Future.delayed(const Duration(seconds: 3));
+    
+    if (mounted && !context.read<SensorProvider>().isConnected) {
+      setState(() {
+        _showingRetry = true;
+      });
+    }
   }
 
   @override
@@ -54,7 +72,9 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
 
                     // Title
                     Text(
-                      'Hardware Not Connected',
+                      sensorProvider.isLoading 
+                        ? 'Connecting...'
+                        : 'Hardware Not Connected',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -64,7 +84,9 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
 
                     // Description
                     Text(
-                      'Connect your ESP32 mosquito detector to start monitoring real-time sensor readings and alerts.',
+                      sensorProvider.isLoading
+                        ? 'Trying to reach your ESP32 device...'
+                        : 'Connect your ESP32 mosquito detector to start monitoring real-time sensor readings and alerts.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey.shade600,
                       ),
@@ -72,22 +94,57 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Steps
-                    _buildStep(
-                      'Power on your ESP32 device',
-                      '1',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStep(
-                      'Ensure it\'s connected to the internet',
-                      '2',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStep(
-                      'Make sure your phone has internet access',
-                      '3',
-                    ),
-                    const SizedBox(height: 40),
+                    // Loading indicator when connecting
+                    if (sensorProvider.isLoading)
+                      Column(
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation(
+                              Colors.blue.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Waiting for hardware response...',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Column(
+                        children: [
+                          // Steps (only show when not loading)
+                          _buildStep(
+                            'Power on your ESP32 device',
+                            '1',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildStep(
+                            'Ensure it\'s connected to the internet',
+                            '2',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildStep(
+                            'Make sure your phone has internet access',
+                            '3',
+                          ),
+                        ],
+                      ),
+                    
+                    const SizedBox(height: 32),
+
+                    // Description
+                    if (!sensorProvider.isLoading)
+                      Text(
+                        'Connect your ESP32 mosquito detector to start monitoring real-time sensor readings and alerts.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey.shade600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    const SizedBox(height: 32),
 
                     // Error message
                     if (sensorProvider.error != null)

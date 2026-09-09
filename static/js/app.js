@@ -93,18 +93,33 @@ class MosquitoApp {
   }
 
   _checkAuthAndStart() {
-    // Splash screen animation timer -> transitions after 1.8 seconds
-    setTimeout(() => {
-      const splash = document.getElementById("screen-splash");
-      if (splash && this.currentScreen === "screen-splash") {
-        if (this.user.isLoggedIn) {
-          this.showScreen("screen-home");
-          this.startLivePolling();
-        } else {
-          this.showScreen("screen-login");
-        }
-      }
-    }, 1800);
+    this.retryBackendConnection();
+  }
+
+  setBackendStatus(message) {
+    const status = document.getElementById("splash-connection-status");
+    if (status) status.textContent = message;
+  }
+
+  async retryBackendConnection() {
+    const retryButton = document.getElementById("splash-retry-btn");
+    if (retryButton) retryButton.style.display = "none";
+    this.setBackendStatus("Connecting to ESP32 Telemetry Node...");
+
+    const data = await API.getLatest();
+    if (!data) {
+      this.setBackendStatus("The telemetry service is taking longer than usual. Please retry.");
+      if (retryButton) retryButton.style.display = "inline-flex";
+      return;
+    }
+
+    this.setBackendStatus("Telemetry connected. Loading dashboard...");
+    if (this.user.isLoggedIn) {
+      this.showScreen("screen-home");
+      this.startLivePolling();
+    } else {
+      this.showScreen("screen-login");
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -683,12 +698,21 @@ class MosquitoApp {
   // Event Bindings & Helpers
   // --------------------------------------------------------------------------
   _bindEvents() {
-    // Navigation Tabs Click
-    document.querySelectorAll(".nav-tab-item").forEach(tab => {
-      tab.addEventListener("click", () => {
-        const targetScreen = tab.dataset.screen;
-        if (targetScreen) this.showScreen(targetScreen);
-      });
+    // Delegate navigation so taps still work after any DOM re-render.
+    document.addEventListener("click", (event) => {
+      const tab = event.target.closest(".nav-tab-item");
+      if (!tab || !tab.dataset.screen) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      this.showScreen(tab.dataset.screen);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if ((event.key !== "Enter" && event.key !== " ") || !event.target.matches(".nav-tab-item")) return;
+
+      event.preventDefault();
+      this.showScreen(event.target.dataset.screen);
     });
 
     // Alert filter chips
