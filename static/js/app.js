@@ -1,17 +1,17 @@
 /**
  * app.js
  * ------
- * Main Single Page Application (SPA) Controller for
- * "Smart Mosquito Breeding Detection System".
+ * Next-Gen IoT Command Center Controller for
+ * "Smart Mosquito Breeding Detection System" (ESP32).
  */
 
 class MosquitoApp {
   constructor() {
-    this.currentScreen = "screen-splash";
+    this.currentScreen = "screen-home";
     this.user = {
       name: "Dr. Alok Verma",
       email: "alok.verma@health.gov.in",
-      role: "Field Officer", // "Field Officer" | "Administrator" | "Student Researcher"
+      role: "Field Officer",
       isLoggedIn: true
     };
     this.latestRecord = null;
@@ -26,22 +26,21 @@ class MosquitoApp {
   init() {
     this._bindEvents();
     this._initTheme();
-    this._checkAuthAndStart();
     this._initChecklistState();
+
+    // Start with Executive Command Dashboard immediately
+    this.showScreen("screen-home");
+    this.startLivePolling();
+    this.initDashboardChartsAndFeeds();
   }
 
   // --------------------------------------------------------------------------
   // Navigation & Screen Router
   // --------------------------------------------------------------------------
   showScreen(screenId) {
-    if (!this.user.isLoggedIn && screenId !== "screen-login" && screenId !== "screen-splash") {
-      screenId = "screen-login";
-    }
-
-    const previousScreen = this.currentScreen;
     this.currentScreen = screenId;
 
-    // Update screen elements
+    // Update screen views
     document.querySelectorAll(".screen-view").forEach(el => {
       el.classList.remove("active");
     });
@@ -51,32 +50,52 @@ class MosquitoApp {
       target.scrollTop = 0;
     }
 
-    // Update Bottom Navigation Active Tab
-    document.querySelectorAll(".nav-tab-item").forEach(tab => {
+    // Update Sidebar Navigation Active Item
+    document.querySelectorAll(".sidebar-nav .nav-item").forEach(item => {
+      item.classList.remove("active");
+      if (item.dataset.screen === screenId) {
+        item.classList.add("active");
+      }
+    });
+
+    // Update Mobile Bottom Nav Active Tab
+    document.querySelectorAll(".app-bottom-nav .nav-tab-item").forEach(tab => {
       tab.classList.remove("active");
       if (tab.dataset.screen === screenId) {
         tab.classList.add("active");
       }
     });
 
-    // Handle Header & Bottom Nav Visibility
-    const isSplash = screenId === "screen-splash";
-    const isLogin = screenId === "screen-login";
-    const bottomNav = document.getElementById("main-bottom-nav");
-    const appHeader = document.getElementById("main-app-header");
-
-    if (bottomNav) bottomNav.style.display = (isSplash || isLogin) ? "none" : "flex";
-    if (appHeader) appHeader.style.display = (isSplash || isLogin) ? "none" : "flex";
-
-    // Play click sound & haptic vibration feedback
-    if (!isSplash) {
-      if (window.soundFx) window.soundFx.playClick();
-      if (navigator.vibrate) {
-        try { navigator.vibrate(10); } catch(e) {}
-      }
+    // Update Top Header Page Title
+    const titles = {
+      "screen-home": "Executive Command Dashboard",
+      "screen-monitor": "Live Telemetry & Diagnostics",
+      "screen-alerts": "Incident Alerts & Dispatch",
+      "screen-history": "Historical Trends & Analytics",
+      "screen-device": "ESP32 Hardware Diagnostics",
+      "screen-tips": "Larvicide & Field Prevention",
+      "screen-profile": "Officer Settings & System Config"
+    };
+    const titleEl = document.getElementById("page-title");
+    if (titleEl && titles[screenId]) {
+      titleEl.textContent = titles[screenId];
     }
 
-    // On-demand screen re-renders
+    // Play click sound & haptic vibration
+    if (window.soundFx) window.soundFx.playClick();
+    if (navigator.vibrate) {
+      try { navigator.vibrate(10); } catch(e) {}
+    }
+
+    // Close mobile drawer if open
+    if (window.innerWidth <= 900) {
+      const sidebar = document.getElementById("app-sidebar");
+      const overlay = document.getElementById("sidebar-overlay");
+      if (sidebar) sidebar.classList.remove("open");
+      if (overlay) overlay.classList.remove("active");
+    }
+
+    // Screen-specific on-demand renders
     if (screenId === "screen-home") {
       this.refreshData();
     } else if (screenId === "screen-monitor") {
@@ -92,36 +111,6 @@ class MosquitoApp {
     }
   }
 
-  _checkAuthAndStart() {
-    this.retryBackendConnection();
-  }
-
-  setBackendStatus(message) {
-    const status = document.getElementById("splash-connection-status");
-    if (status) status.textContent = message;
-  }
-
-  async retryBackendConnection() {
-    const retryButton = document.getElementById("splash-retry-btn");
-    if (retryButton) retryButton.style.display = "none";
-    this.setBackendStatus("Connecting to ESP32 Telemetry Node...");
-
-    const data = await API.getLatest();
-    if (!data) {
-      this.setBackendStatus("The telemetry service is taking longer than usual. Please retry.");
-      if (retryButton) retryButton.style.display = "inline-flex";
-      return;
-    }
-
-    this.setBackendStatus("Telemetry connected. Loading dashboard...");
-    if (this.user.isLoggedIn) {
-      this.showScreen("screen-home");
-      this.startLivePolling();
-    } else {
-      this.showScreen("screen-login");
-    }
-  }
-
   // --------------------------------------------------------------------------
   // Data Polling & Synchronization
   // --------------------------------------------------------------------------
@@ -129,6 +118,19 @@ class MosquitoApp {
     if (this.pollingTimer) clearInterval(this.pollingTimer);
     this.refreshData();
     this.pollingTimer = setInterval(() => this.refreshData(), 4000);
+  }
+
+  async initDashboardChartsAndFeeds() {
+    try {
+      const records = await API.getRecords("all", "all", 20);
+      if (window.telemetryCharts && records && records.length) {
+        window.telemetryCharts.initLiveTelemetryChart("liveTelemetryCanvas", records);
+      }
+      this.renderRecentTable(records);
+      this.renderAlertsScreen("all");
+    } catch (e) {
+      console.warn("Initial dashboard chart load:", e);
+    }
   }
 
   async refreshData() {
@@ -143,12 +145,14 @@ class MosquitoApp {
       this._updateUIHeaderAndBadges();
       this._updateHomeScreen();
 
-      // Live screen updates
+      // Live updates to charts
+      if (window.telemetryCharts && this.latestRecord) {
+        window.telemetryCharts.updateLiveTelemetry(this.latestRecord);
+      }
+
+      // Live updates to secondary screens if open
       if (this.currentScreen === "screen-monitor") {
         this._updateMonitorGauges();
-        if (window.telemetryCharts) {
-          window.telemetryCharts.updateLiveTelemetry(this.latestRecord);
-        }
       } else if (this.currentScreen === "screen-device") {
         this._updateDeviceCard();
       }
@@ -160,23 +164,23 @@ class MosquitoApp {
   _updateUIHeaderAndBadges() {
     const activeCount = this.systemStats?.active_alerts || 0;
     
-    // Header notification badge
+    // Header notification bell badge
     const headerBadge = document.getElementById("header-alert-badge");
     if (headerBadge) {
       headerBadge.textContent = activeCount;
       headerBadge.style.display = activeCount > 0 ? "flex" : "none";
     }
 
-    // Bottom Navigation Alerts Badge
+    // Sidebar & Bottom Navigation Alerts Badge
     const navBadge = document.getElementById("nav-alerts-badge");
     if (navBadge) {
       navBadge.textContent = activeCount;
-      navBadge.style.display = activeCount > 0 ? "flex" : "none";
+      navBadge.style.display = activeCount > 0 ? "inline-block" : "none";
     }
   }
 
   // --------------------------------------------------------------------------
-  // 3. Home Dashboard Screen Rendering
+  // Executive Command Dashboard Rendering (_updateHomeScreen)
   // --------------------------------------------------------------------------
   _updateHomeScreen() {
     const rec = this.latestRecord || {
@@ -184,124 +188,206 @@ class MosquitoApp {
       Temperature: 29,
       Humidity: 76,
       ImageRiskScore: 88,
+      RiskScore: 84,
       RiskLabel: "danger",
       Timestamp: new Date().toISOString()
     };
     const dev = this.deviceState || {};
     const stats = this.systemStats || {};
 
-    // 1. Device connection banner
+    // 1. Device connection badge in sidebar & header
     const devDot = document.getElementById("home-device-dot");
     const devTitle = document.getElementById("home-device-name");
-    const devSub = document.getElementById("home-device-sync");
-    if (devDot) {
-      devDot.className = `device-dot ${dev.status === "connected" ? "" : "offline"}`;
-    }
-    if (devTitle) devTitle.textContent = dev.device_name || "ESP32 Mosquito Guard #1";
-    if (devSub) devSub.textContent = `Node: ${dev.device_id || "ESP32-01"} • Battery: ${dev.battery_level || 94}% • ${dev.location || "Sector 4"}`;
+    const devSync = document.getElementById("home-device-sync");
+    const devRssi = document.getElementById("sidebar-rssi");
 
-    // 2. System Status Card
-    const statusCard = document.getElementById("home-system-status-card");
+    if (devDot) {
+      devDot.className = `status-dot ${dev.status === "offline" ? "danger" : ""}`;
+    }
+    if (devTitle) devTitle.textContent = dev.device_name || "ESP32 Node #1";
+    if (devSync) devSync.textContent = dev.status === "connected" ? "Telemetry Online" : "Connecting...";
+    if (devRssi && dev.rssi) devRssi.textContent = `${dev.rssi} dBm`;
+
+    // 2. Risk Status Badges & Verdict Ring
     const statusBadge = document.getElementById("home-status-badge");
     const statusHeadline = document.getElementById("home-status-headline");
     const statusDesc = document.getElementById("home-status-desc");
     const statusTime = document.getElementById("home-status-time");
+    const verdictScore = document.getElementById("verdict-score-num");
+    const verdictRing = document.getElementById("verdict-gauge-ring");
 
     const risk = rec.RiskLabel || "safe";
-    if (statusCard) {
-      statusCard.className = `system-status-card ${risk}`;
+    const score = rec.RiskScore != null ? rec.RiskScore : (risk === "danger" ? 86 : (risk === "caution" ? 54 : 18));
+
+    if (verdictScore) verdictScore.textContent = score;
+
+    if (verdictRing && verdictRing.parentElement) {
+      const ringColor = risk === "danger" ? "var(--danger)" : (risk === "caution" ? "var(--caution)" : "var(--safe)");
+      verdictRing.parentElement.style.background = `conic-gradient(${ringColor} 0%, ${ringColor} ${score}%, rgba(255, 255, 255, 0.08) ${score}%)`;
+      if (verdictScore) verdictScore.style.color = ringColor;
     }
 
-    if (risk === "danger") {
-      if (statusBadge) statusBadge.innerHTML = `<span>🔴</span> High Breeding Risk`;
-      if (statusHeadline) statusHeadline.textContent = "🔴 BREEDING RISK DETECTED";
-      if (statusDesc) statusDesc.textContent = "Stagnant water level & favorable breeding temperature detected. Immediate action required.";
-    } else if (risk === "caution") {
-      if (statusBadge) statusBadge.innerHTML = `<span>🟡</span> Caution Warning`;
-      if (statusHeadline) statusHeadline.textContent = "🟡 CAUTION – CHECK WATER CONDITIONS";
-      if (statusDesc) statusDesc.textContent = "Water conditions approaching threshold. Monitor drainage and inspect containers.";
-    } else {
-      if (statusBadge) statusBadge.innerHTML = `<span>🟢</span> Area Safe`;
-      if (statusHeadline) statusHeadline.textContent = "🟢 SAFE AREA";
-      if (statusDesc) statusDesc.textContent = "Environmental readings normal. No stagnant water breeding risk found.";
+    if (statusBadge) {
+      statusBadge.className = `header-risk-pill ${risk}`;
+      statusBadge.textContent = risk === "danger" ? "HIGH RISK" : (risk === "caution" ? "CAUTION" : "SAFE");
+    }
+
+    if (statusHeadline) {
+      statusHeadline.textContent = risk === "danger"
+        ? "CRITICAL BREEDING RISK DETECTED"
+        : (risk === "caution" ? "CAUTION: CONDITIONS FAVORABLE" : "LOW RISK: ENVIRONMENT SAFE");
+    }
+
+    if (statusDesc) {
+      statusDesc.textContent = risk === "danger"
+        ? "Stagnant water level and warm ambient temperature are in prime breeding zone. Automated drainage pump activated."
+        : (risk === "caution" ? "Water level approaching warning threshold. Continuous monitoring active." : "Environmental parameters are outside mosquito egg incubation thresholds.");
     }
 
     if (statusTime) {
-      const timeStr = new Date(rec.Timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const timeStr = new Date(rec.Timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       statusTime.textContent = `Updated: ${timeStr}`;
     }
 
-    // 3. Live Sensor Cards
-    // Water
+    // 3. Emergency High-Risk Banner & Alarm
+    const emergencyBanner = document.getElementById("home-emergency-banner");
+    if (emergencyBanner) {
+      if (risk === "danger") {
+        emergencyBanner.style.display = "block";
+        if (!this.activeRiskAlarmPlayed && window.soundFx) {
+          window.soundFx.playAlarm();
+          this.activeRiskAlarmPlayed = true;
+        }
+      } else {
+        emergencyBanner.style.display = "none";
+        this.activeRiskAlarmPlayed = false;
+      }
+    }
+
+    // 4. Primary KPI Metric Cards
+    // Metric 1: Water Level
     const wlVal = document.getElementById("home-val-water");
     const wlFill = document.getElementById("home-fill-water");
     const wlStatus = document.getElementById("home-status-water");
-    if (wlVal) wlVal.textContent = rec.WaterLevel ?? "--";
+    const wlDepth = document.getElementById("home-water-depth");
+    const waterLvl = rec.WaterLevel ?? 78;
+
+    if (wlVal) wlVal.textContent = `${waterLvl}%`;
     if (wlFill) {
-      wlFill.style.width = `${Math.min(100, rec.WaterLevel || 0)}%`;
-      wlFill.style.background = rec.WaterLevel >= 70 ? "var(--danger)" : (rec.WaterLevel >= 50 ? "var(--caution)" : "var(--primary)");
+      wlFill.style.width = `${Math.min(100, waterLvl)}%`;
+      wlFill.style.background = waterLvl >= 70 ? "var(--danger)" : (waterLvl >= 50 ? "var(--caution)" : "var(--primary)");
     }
     if (wlStatus) {
-      wlStatus.innerHTML = rec.WaterLevel >= 70 ? "<span style='color:var(--danger)'>⚠️ Overflow Risk</span>" : "<span style='color:var(--safe)'>✓ Normal Level</span>";
+      wlStatus.className = `kpi-status-pill ${waterLvl >= 70 ? 'danger' : (waterLvl >= 50 ? 'caution' : '')}`;
+      wlStatus.textContent = waterLvl >= 70 ? "Stagnant Alert" : (waterLvl >= 50 ? "Moderate" : "Safe");
+    }
+    if (wlDepth) {
+      wlDepth.textContent = `Depth: ${(waterLvl * 0.25).toFixed(1)} cm`;
     }
 
-    // Temperature
+    // Metric 2: Temperature
     const tempVal = document.getElementById("home-val-temp");
     const tempFill = document.getElementById("home-fill-temp");
     const tempStatus = document.getElementById("home-status-temp");
-    if (tempVal) tempVal.textContent = rec.Temperature ?? "--";
+    const tempF = document.getElementById("home-temp-f");
+    const temp = rec.Temperature ?? 29;
+
+    if (tempVal) tempVal.textContent = `${temp}°C`;
     if (tempFill) {
-      const tempPercent = Math.min(100, Math.max(0, ((rec.Temperature - 15) / 25) * 100));
+      const tempPercent = Math.min(100, Math.max(0, ((temp - 15) / 25) * 100));
       tempFill.style.width = `${tempPercent}%`;
-      tempFill.style.background = (rec.Temperature >= 20 && rec.Temperature <= 32) ? "var(--caution)" : "var(--safe)";
+      tempFill.style.background = (temp >= 24 && temp <= 33) ? "var(--danger)" : "var(--safe)";
     }
     if (tempStatus) {
-      tempStatus.innerHTML = (rec.Temperature >= 20 && rec.Temperature <= 32) ? "<span style='color:var(--caution)'>⚠️ Optimal Breeding Range</span>" : "<span style='color:var(--safe)'>✓ Safe Climate</span>";
+      const isBreeding = temp >= 24 && temp <= 33;
+      tempStatus.className = `kpi-status-pill ${isBreeding ? 'danger' : ''}`;
+      tempStatus.textContent = isBreeding ? "Prime Breeding" : "Safe Zone";
+    }
+    if (tempF) {
+      tempF.textContent = `${((temp * 9/5) + 32).toFixed(1)}°F`;
     }
 
-    // Humidity
+    // Metric 3: Relative Humidity
     const humVal = document.getElementById("home-val-humidity");
     const humFill = document.getElementById("home-fill-humidity");
     const humStatus = document.getElementById("home-status-humidity");
-    if (humVal) humVal.textContent = rec.Humidity ?? "--";
+    const humidity = rec.Humidity ?? 76;
+
+    if (humVal) humVal.textContent = `${humidity}%`;
     if (humFill) {
-      humFill.style.width = `${Math.min(100, rec.Humidity || 0)}%`;
-      humFill.style.background = rec.Humidity >= 60 ? "var(--caution)" : "var(--safe)";
+      humFill.style.width = `${Math.min(100, humidity)}%`;
+      humFill.style.background = humidity >= 65 ? "var(--caution)" : "var(--safe)";
     }
     if (humStatus) {
-      humStatus.innerHTML = rec.Humidity >= 60 ? "<span style='color:var(--caution)'>⚠️ High Moisture</span>" : "<span style='color:var(--safe)'>✓ Dry Ambient</span>";
+      humStatus.className = `kpi-status-pill ${humidity >= 65 ? 'caution' : ''}`;
+      humStatus.textContent = humidity >= 65 ? "High Saturation" : "Optimal";
     }
 
-    // Image Risk Score
+    // Metric 4: AI Optical / Larvae Index
     const imgVal = document.getElementById("home-val-image");
     const imgFill = document.getElementById("home-fill-image");
     const imgStatus = document.getElementById("home-status-image");
-    if (imgVal) imgVal.textContent = rec.ImageRiskScore ?? "--";
+    const larvaeScore = rec.ImageRiskScore ?? (risk === "danger" ? 88 : 12);
+
+    if (imgVal) imgVal.textContent = `${larvaeScore}%`;
     if (imgFill) {
-      imgFill.style.width = `${Math.min(100, rec.ImageRiskScore || 0)}%`;
-      imgFill.style.background = rec.ImageRiskScore >= 65 ? "var(--danger)" : (rec.ImageRiskScore >= 40 ? "var(--caution)" : "var(--safe)");
+      imgFill.style.width = `${Math.min(100, larvaeScore)}%`;
+      imgFill.style.background = larvaeScore >= 70 ? "var(--danger)" : (larvaeScore >= 40 ? "var(--caution)" : "var(--safe)");
     }
     if (imgStatus) {
-      imgStatus.innerHTML = rec.ImageRiskScore >= 65 ? "<span style='color:var(--danger)'>⚠️ Larvae Detected (AI)</span>" : "<span style='color:var(--safe)'>✓ Clean Water Surface</span>";
+      imgStatus.className = `kpi-status-pill ${larvaeScore >= 70 ? 'danger' : (larvaeScore >= 40 ? 'caution' : '')}`;
+      imgStatus.textContent = larvaeScore >= 70 ? "Larvae Pos" : "Clear";
     }
 
-    // 4. Quick stats summary row
-    const statToday = document.getElementById("home-stat-today");
+    // 5. Actuator Pump State
+    const pumpDot = document.getElementById("pump-state-dot");
+    const pumpText = document.getElementById("pump-state-text");
+    const pumpSwitch = document.getElementById("pump-manual-switch");
+    const isPumpOn = dev.pump_state === "ON" || (risk === "danger" && dev.pump_mode === "auto");
+
+    if (pumpDot) pumpDot.className = `pump-state-dot ${isPumpOn ? 'active' : ''}`;
+    if (pumpText) pumpText.textContent = `Pump ${isPumpOn ? 'RUNNING (Draining)' : 'STANDBY (Off)'}`;
+    if (pumpSwitch && !pumpSwitch.matches(':focus')) {
+      pumpSwitch.checked = isPumpOn;
+    }
+
+    // 6. Quick Alert Counts
     const statActive = document.getElementById("home-stat-active");
     const statResolved = document.getElementById("home-stat-resolved");
-    if (statToday) statToday.textContent = stats.today_alerts ?? "2";
-    if (statActive) statActive.textContent = stats.active_alerts ?? "2";
-    if (statResolved) statResolved.textContent = stats.resolved_alerts ?? "2";
-
-    // 5. Emergency Banner on Home
-    const emergencyBanner = document.getElementById("home-emergency-banner");
-    if (emergencyBanner) {
-      emergencyBanner.style.display = (risk === "danger") ? "flex" : "none";
-    }
+    if (statActive) statActive.textContent = `${stats.active_alerts || 0} Active`;
+    if (statResolved) statResolved.textContent = `${stats.resolved_alerts || 0} Resolved`;
   }
 
   // --------------------------------------------------------------------------
-  // 4. Live Monitoring Screen Rendering
+  // Recent Telemetry Table
+  // --------------------------------------------------------------------------
+  async renderRecentTable(records) {
+    const tbody = document.getElementById("history-table-body");
+    if (!tbody) return;
+
+    if (!records || !records.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No records logged yet.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = records.slice(0, 8).map(r => {
+      const timeStr = new Date(r.Timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const risk = r.RiskLabel || "safe";
+      return `
+        <tr>
+          <td>${timeStr}</td>
+          <td><strong>${r.WaterLevel ?? '--'}%</strong></td>
+          <td>${r.Temperature ?? '--'}°C</td>
+          <td>${r.Humidity ?? '--'}%</td>
+          <td><span class="risk-badge-pill ${risk}">${risk.toUpperCase()}</span></td>
+          <td>${r.Latitude ? `${r.Latitude.toFixed(4)}, ${r.Longitude.toFixed(4)}` : '28.6139, 77.2090'}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // --------------------------------------------------------------------------
+  // Monitor Channels Screen
   // --------------------------------------------------------------------------
   async renderMonitorScreen() {
     this._updateMonitorGauges();
@@ -320,80 +406,82 @@ class MosquitoApp {
     const monHum = document.getElementById("mon-val-hum");
     const monImg = document.getElementById("mon-val-img");
     const monPump = document.getElementById("mon-val-pump");
+    const monPumpText = document.getElementById("mon-pump-text");
     const monSync = document.getElementById("mon-val-sync");
 
     if (monWl) monWl.textContent = `${rec.WaterLevel ?? "--"}%`;
     if (monTemp) monTemp.textContent = `${rec.Temperature ?? "--"}°C`;
     if (monHum) monHum.textContent = `${rec.Humidity ?? "--"}%`;
-    if (monImg) monImg.textContent = `${rec.ImageRiskScore ?? "--"}%`;
-    if (monPump) monPump.textContent = dev.pump_state === "ON" ? "RUNNING (ON)" : "STANDBY (OFF)";
-    if (monSync) monSync.textContent = new Date(rec.Timestamp || Date.now()).toLocaleTimeString();
+    if (monImg) monImg.textContent = `${rec.ImageRiskScore ?? "--"}% Larvae`;
+    if (monPump) monPump.textContent = dev.pump_state === "ON" ? "Active" : "Standby";
+    if (monPumpText) monPumpText.textContent = dev.pump_state === "ON" ? "RUNNING (ON)" : "STANDBY (OFF)";
+    if (monSync) monSync.textContent = `Sync: ${new Date(rec.Timestamp || Date.now()).toLocaleTimeString()}`;
   }
 
   // --------------------------------------------------------------------------
-  // 5. Alerts Screen Rendering
+  // Alerts Feed Screen & Incident Handling
   // --------------------------------------------------------------------------
   async renderAlertsScreen(filterStatus = "all") {
     const container = document.getElementById("alerts-list-container");
-    if (!container) return;
-
-    container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">Loading alerts...</div>`;
+    const fullContainer = document.getElementById("alerts-full-list");
 
     const alerts = await API.getAlerts(filterStatus);
     this.activeAlerts = alerts;
 
-    if (!alerts.length) {
-      container.innerHTML = `
-        <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
-          <div style="font-size:2rem; margin-bottom:8px;">✅</div>
-          <div style="font-weight:700; font-size:0.9rem; color:var(--text-main);">No alerts found</div>
-          <p style="font-size:0.75rem; margin-top:4px;">No mosquito breeding risks recorded for this filter.</p>
-        </div>
-      `;
-      return;
-    }
+    const htmlContent = !alerts.length
+      ? `<div style="text-align:center; padding:24px 12px; color:var(--text-muted);">
+           <span style="font-size:1.5rem;">🟢</span>
+           <p style="margin-top:6px; font-weight:600;">No active incidents recorded.</p>
+         </div>`
+      : alerts.map(a => {
+          const isDanger = a.risk_level === "danger";
+          const isCaution = a.risk_level === "caution";
+          const isResolved = a.status === "resolved";
+          const badgeClass = isResolved ? "safe" : (isDanger ? "danger" : "caution");
+          const timeAgo = this._timeAgo(a.created_at || a.last_updated);
 
-    container.innerHTML = alerts.map(a => {
-      const isDanger = a.risk_level === "danger";
-      const isCaution = a.risk_level === "caution";
-      const isResolved = a.status === "resolved";
-      const badgeClass = isResolved ? "resolved" : (isDanger ? "danger" : (isCaution ? "caution" : "safe"));
-      const timeAgo = this._timeAgo(a.created_at || a.last_updated);
+          return `
+            <div class="alert-item-card ${isDanger ? 'danger' : (isCaution ? 'caution' : 'safe')}">
+              <div class="alert-item-header">
+                <strong style="font-size:0.86rem; color:var(--text-main);">${a.title || 'Breeding Risk Warning'}</strong>
+                <span class="risk-badge-pill ${badgeClass}">${isResolved ? 'RESOLVED' : (isDanger ? 'HIGH RISK' : 'CAUTION')}</span>
+              </div>
+              <div class="alert-item-meta">
+                <span>📍 ${a.location || 'Sector 4 Drain'}</span>
+                <span>⏱ ${timeAgo}</span>
+              </div>
+              <div class="alert-telemetry-pills">
+                <span>💧 ${a.water_level}% Water</span>
+                <span>🌡️ ${a.temperature}°C</span>
+                <span>💨 ${a.humidity}% RH</span>
+              </div>
+              <div class="alert-item-actions">
+                <button class="btn-secondary" onclick="app.openAlertDetails('${a.alert_id}')">Details</button>
+                ${!isResolved ? `
+                  <button class="btn-resolve" onclick="app.quickResolveAlert('${a.alert_id}')">✓ Resolve</button>
+                ` : `
+                  <button class="btn-secondary" style="color:var(--safe); border-color:var(--safe);" disabled>✓ Cleaned</button>
+                `}
+              </div>
+            </div>
+          `;
+        }).join("");
 
-      return `
-        <div class="alert-card-item ${isDanger ? 'danger' : (isCaution ? 'caution' : '')}">
-          <div class="alert-item-header">
-            <div class="alert-id-tag">${a.alert_id}</div>
-            <span class="risk-badge-pill ${badgeClass}">${isResolved ? 'RESOLVED' : (isDanger ? 'HIGH RISK' : 'CAUTION')}</span>
-          </div>
+    if (container) container.innerHTML = htmlContent;
+    if (fullContainer) fullContainer.innerHTML = htmlContent;
+  }
 
-          <div style="font-size:0.86rem; font-weight:700; color:var(--text-main);">${a.title}</div>
-          <div class="alert-item-meta">
-            <span>📍 ${a.location || 'Sector 4'}</span> • <span>🕒 ${timeAgo}</span>
-          </div>
-
-          <div class="alert-telemetry-pills">
-            <span>💧 ${a.water_level}%</span>
-            <span>🌡️ ${a.temperature}°C</span>
-            <span>💨 ${a.humidity}%</span>
-            <span>📷 AI: ${a.image_risk_score}%</span>
-          </div>
-
-          <div class="alert-item-actions">
-            <button class="btn-secondary" onclick="app.openAlertDetails('${a.alert_id}')">View Details</button>
-            ${!isResolved ? `
-              <button class="btn-resolve" onclick="app.quickResolveAlert('${a.alert_id}')">✓ Mark Resolved</button>
-            ` : `
-              <button class="btn-secondary" style="color:var(--safe); border-color:var(--safe);" disabled>✓ Cleaned</button>
-            `}
-          </div>
-        </div>
-      `;
-    }).join("");
+  _timeAgo(timestamp) {
+    if (!timestamp) return "Just now";
+    const sec = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+    if (sec < 60) return "Just now";
+    if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+    if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+    return `${Math.floor(sec / 86400)}d ago`;
   }
 
   // --------------------------------------------------------------------------
-  // 6. Alert Details Modal & Actions
+  // Alert Details Modal & Actions
   // --------------------------------------------------------------------------
   async openAlertDetails(alertId) {
     const alert = await API.getAlertDetails(alertId);
@@ -403,34 +491,40 @@ class MosquitoApp {
     const modal = document.getElementById("alert-details-modal");
     if (!modal) return;
 
-    document.getElementById("modal-alert-id").textContent = alert.alert_id;
-    document.getElementById("modal-alert-title").textContent = alert.title;
-    document.getElementById("modal-alert-time").textContent = new Date(alert.created_at || alert.last_updated).toLocaleString();
-    document.getElementById("modal-alert-loc").textContent = alert.location || "Sector 4";
-    document.getElementById("modal-alert-device").textContent = alert.device_id || "ESP32-01";
+    const idEl = document.getElementById("modal-alert-id");
+    const titleEl = document.getElementById("modal-alert-title");
+    const timeEl = document.getElementById("modal-alert-time");
+    const locEl = document.getElementById("modal-alert-loc");
+    const devEl = document.getElementById("modal-alert-device");
 
-    document.getElementById("modal-wl").textContent = `${alert.water_level}%`;
-    document.getElementById("modal-temp").textContent = `${alert.temperature}°C`;
-    document.getElementById("modal-hum").textContent = `${alert.humidity}%`;
-    document.getElementById("modal-img").textContent = `${alert.image_risk_score}%`;
+    if (idEl) idEl.textContent = `ID: ${alert.alert_id}`;
+    if (titleEl) titleEl.textContent = alert.title;
+    if (timeEl) timeEl.textContent = new Date(alert.created_at || alert.last_updated).toLocaleString();
+    if (locEl) locEl.textContent = alert.location || "Sector 4";
+    if (devEl) devEl.textContent = alert.device_id || "ESP32-01";
 
-    // Reasons breakdown
+    const wlEl = document.getElementById("modal-wl");
+    const tempEl = document.getElementById("modal-temp");
+    const humEl = document.getElementById("modal-hum");
+    const imgEl = document.getElementById("modal-img");
+
+    if (wlEl) wlEl.textContent = `${alert.water_level}%`;
+    if (tempEl) tempEl.textContent = `${alert.temperature}°C`;
+    if (humEl) humEl.textContent = `${alert.humidity}%`;
+    if (imgEl) imgEl.textContent = `${alert.image_risk_score}%`;
+
     const reasonsBox = document.getElementById("modal-reasons-list");
     if (reasonsBox) {
       const reasons = alert.reasons || ["Stagnant water level exceeds breeding safety limit (>70%)."];
       reasonsBox.innerHTML = reasons.map(r => `<li style="margin-bottom:4px;">${r}</li>`).join("");
     }
 
-    // Action Logs
     const logsBox = document.getElementById("modal-actions-history");
     if (logsBox) {
       const logs = alert.actions_log || [];
-      logsBox.innerHTML = logs.map(l => `
-        <div style="font-size:0.75rem; padding:6px 0; border-bottom:1px solid var(--border-color);">
-          <strong style="color:var(--text-main);">${l.actor || 'Officer'}:</strong> ${l.action}
-          <div style="font-size:0.68rem; color:var(--text-muted);">${new Date(l.timestamp).toLocaleTimeString()}</div>
-        </div>
-      `).join("");
+      logsBox.innerHTML = logs.length
+        ? logs.map(l => `<div style="padding:4px 0; border-bottom:1px solid var(--border-subtle);"><strong style="color:var(--text-main);">${l.actor || 'Officer'}:</strong> ${l.action}</div>`).join("")
+        : "No field interventions logged yet.";
     }
 
     modal.classList.add("active");
@@ -443,17 +537,18 @@ class MosquitoApp {
   }
 
   async quickResolveAlert(alertId) {
-    const actor = this.user.name || "Field Officer";
-    const res = await API.resolveAlert(alertId, actor, "Inspected on site, emptied stagnant water and treated container.");
-    if (res.success) {
-      if (window.soundFx) window.soundFx.playSuccess();
-      this.showToast(`✅ Alert ${alertId} marked as Resolved!`);
-      this.renderAlertsScreen();
+    const res = await API.resolveAlert(alertId, this.user.name, "Resolved via Quick Action on Command Dashboard");
+    if (res && res.success) {
+      this.showToast("Incident marked as Resolved!");
       this.refreshData();
+      this.renderAlertsScreen();
+      if (window.soundFx) window.soundFx.playSafe();
+    } else {
+      this.showToast("Error resolving incident");
     }
   }
 
-  openReportActionModal() {
+  openActionReportModal() {
     this.closeModal("alert-details-modal");
     const modal = document.getElementById("report-action-modal");
     if (modal) modal.classList.add("active");
@@ -461,263 +556,183 @@ class MosquitoApp {
 
   async submitActionReport() {
     if (!this.selectedAlert) return;
-    const actionSelect = document.getElementById("action-type-select").value;
-    const customNote = document.getElementById("action-custom-note").value.trim();
-    const markCleaned = document.getElementById("action-mark-cleaned").checked;
-    const markResolved = document.getElementById("action-mark-resolved").checked;
 
-    const fullNote = customNote ? `${actionSelect} - ${customNote}` : actionSelect;
+    const actionType = document.getElementById("action-type-select")?.value || "larvicide";
+    const customNote = document.getElementById("action-custom-note")?.value || "";
+    const markCleaned = document.getElementById("action-mark-cleaned")?.checked || false;
+    const markResolved = document.getElementById("action-mark-resolved")?.checked || false;
 
-    const res = await API.logAlertAction(
-      this.selectedAlert.alert_id,
-      this.user.name,
-      fullNote,
-      markCleaned,
-      markResolved
-    );
+    const actionText = `${actionType.toUpperCase()}: ${customNote}`;
+    const res = await API.logAlertAction(this.selectedAlert.alert_id, this.user.name, actionText, markCleaned, markResolved);
 
-    if (res.success) {
-      if (window.soundFx) window.soundFx.playSuccess();
+    if (res && res.success) {
+      this.showToast("Field intervention logged successfully!");
       this.closeModal("report-action-modal");
-      this.showToast("📋 Action report logged successfully!");
-      this.renderAlertsScreen();
       this.refreshData();
+      this.renderAlertsScreen();
+    } else {
+      this.showToast("Failed to log intervention");
     }
   }
 
   // --------------------------------------------------------------------------
-  // 7. Device Status & Hardware Diagnostics
+  // History Trends & Distribution Screen
   // --------------------------------------------------------------------------
-  async renderDeviceScreen() {
-    const dev = await API.getDevice();
-    if (dev) this.deviceState = dev;
-    this._updateDeviceCard();
-  }
-
-  _updateDeviceCard() {
-    const dev = this.deviceState || {};
-
-    const nameEl = document.getElementById("dev-screen-name");
-    const idEl = document.getElementById("dev-screen-id");
-    const battEl = document.getElementById("dev-screen-batt");
-    const rssiEl = document.getElementById("dev-screen-rssi");
-    const syncEl = document.getElementById("dev-screen-sync");
-
-    if (nameEl) nameEl.textContent = dev.device_name || "ESP32 Mosquito Guard Node #1";
-    if (idEl) idEl.textContent = `ID: ${dev.device_id || "ESP32-01"}`;
-    if (battEl) battEl.textContent = `${dev.battery_level || 94}%`;
-    if (rssiEl) rssiEl.textContent = `${dev.wifi_rssi || -62} dBm`;
-    if (syncEl) syncEl.textContent = new Date(dev.last_sync || Date.now()).toLocaleTimeString();
-  }
-
-  testBuzzerSound() {
-    if (window.soundFx) {
-      window.soundFx.playBuzzerAlarm();
-      this.showToast("🔔 ESP32 Hardware Buzzer Tested");
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // 8. History & Reports Screen
-  // --------------------------------------------------------------------------
-  async renderHistoryScreen(timeFilter = "all") {
-    const records = await API.getRecords("all", timeFilter, 30);
+  async renderHistoryScreen() {
+    const records = await API.getRecords("all", "all", 50);
     const stats = await API.getStats();
 
     if (window.telemetryCharts) {
       window.telemetryCharts.initHistoryTrendChart("historyTrendCanvas", records);
       window.telemetryCharts.initRiskDistChart("riskDistCanvas", stats || {});
     }
-
-    const tableBody = document.getElementById("history-table-body");
-    if (tableBody) {
-      if (!records.length) {
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No records found.</td></tr>`;
-        return;
-      }
-
-      tableBody.innerHTML = records.map(r => `
-        <tr>
-          <td style="font-size:0.75rem;">${new Date(r.Timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-          <td style="font-weight:700;">${r.WaterLevel}%</td>
-          <td>${r.Temperature}°C</td>
-          <td>${r.Humidity}%</td>
-          <td><span class="risk-badge-pill ${r.RiskLabel}">${r.RiskLabel}</span></td>
-        </tr>
-      `).join("");
-    }
-  }
-
-  downloadReportCSV() {
-    window.location.href = "/api/report/export";
-    this.showToast("📥 Exporting CSV report...");
-  }
-
-  openPrintReportModal() {
-    window.print();
   }
 
   // --------------------------------------------------------------------------
-  // 9. Prevention Tips & 5-Min Checklist
+  // ESP32 Hardware Diagnostics Screen
   // --------------------------------------------------------------------------
-  _initChecklistState() {
-    const saved = localStorage.getItem("mosquito_checklist_state");
-    if (saved) {
-      try {
-        const checkedItems = JSON.parse(saved);
-        checkedItems.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.checked = true;
-        });
-      } catch (e) {}
-    }
-    this._updateChecklistProgress();
+  async renderDeviceScreen() {
+    this._updateDeviceCard();
   }
 
-  toggleChecklistItem(el) {
-    const items = document.querySelectorAll(".chk-item");
-    const checked = Array.from(items).filter(i => i.checked).map(i => i.id);
-    localStorage.setItem("mosquito_checklist_state", JSON.stringify(checked));
-    this._updateChecklistProgress();
-    if (window.soundFx) window.soundFx.playClick();
-  }
+  _updateDeviceCard() {
+    const dev = this.deviceState || {};
+    const nameEl = document.getElementById("dev-screen-name");
+    const idEl = document.getElementById("dev-screen-id");
+    const rssiEl = document.getElementById("dev-screen-rssi");
+    const battEl = document.getElementById("dev-screen-batt");
+    const syncEl = document.getElementById("dev-screen-sync");
 
-  _updateChecklistProgress() {
-    const items = document.querySelectorAll(".chk-item");
-    const checked = Array.from(items).filter(i => i.checked).length;
-    const progressFill = document.getElementById("checklist-progress-fill");
-    const progressText = document.getElementById("checklist-progress-text");
-
-    if (items.length && progressFill && progressText) {
-      const pct = Math.round((checked / items.length) * 100);
-      progressFill.style.width = `${pct}%`;
-      progressText.textContent = `${pct}% Completed (${checked}/${items.length})`;
-      if (pct === 100 && window.soundFx) {
-        window.soundFx.playSuccess();
-      }
-    }
+    if (nameEl) nameEl.textContent = dev.device_name || "ESP32 Mosquito Guard Node #1";
+    if (idEl) idEl.textContent = dev.device_id || "ESP32-MG-01";
+    if (rssiEl) rssiEl.textContent = `${dev.rssi || -64} dBm (Signal Strong)`;
+    if (battEl) battEl.textContent = `${dev.battery_level || 94}% (Li-Ion 4.18V)`;
+    if (syncEl) syncEl.textContent = dev.status === "connected" ? "HTTPS REST / Live SSE" : "Offline";
   }
 
   // --------------------------------------------------------------------------
-  // 10. Profile & Settings
+  // Officer Profile & Settings Screen
   // --------------------------------------------------------------------------
   renderProfileScreen() {
-    document.getElementById("prof-user-name").textContent = this.user.name;
-    document.getElementById("prof-user-email").textContent = this.user.email;
-    document.getElementById("prof-user-role").textContent = this.user.role;
-    document.getElementById("prof-role-select").value = this.user.role;
+    const nameInput = document.getElementById("prof-user-name");
+    const emailInput = document.getElementById("prof-user-email");
+    const roleSelect = document.getElementById("prof-role-select");
+    const roleDesc = document.getElementById("prof-user-role");
+
+    if (nameInput) nameInput.value = this.user.name;
+    if (emailInput) emailInput.value = this.user.email;
+    if (roleSelect) roleSelect.value = this.user.role;
+    if (roleDesc) roleDesc.textContent = `Active Role: ${this.user.role} — Full administrative and field action privileges.`;
   }
 
-  switchUserRole(newRole) {
+  changeRole(newRole) {
     this.user.role = newRole;
-    if (newRole === "Resident / Citizen") {
-      this.user.name = "Rahul Sharma (Resident)";
-      this.user.email = "rahul.resident@community.org";
-    } else if (newRole === "School / College In-charge") {
-      this.user.name = "Principal Sharma";
-      this.user.email = "principal@modelschool.edu";
-    } else if (newRole === "Administrator") {
-      this.user.name = "Admin Alok";
-      this.user.email = "admin@smartmosquito.org";
-    } else if (newRole === "Student Researcher") {
-      this.user.name = "Alok (Student - IT)";
-      this.user.email = "alok.student@college.edu";
-    } else {
-      this.user.name = "Dr. Alok Verma";
-      this.user.email = "alok.verma@health.gov.in";
-    }
     this.renderProfileScreen();
-    this.showToast(`Active User: ${this.user.name} (${newRole})`);
+    this.showToast(`Active role switched to: ${newRole}`);
   }
 
+  // --------------------------------------------------------------------------
+  // Citizen Mosquito Spot Report
+  // --------------------------------------------------------------------------
   openCitizenReportModal() {
-    if (window.soundFx) window.soundFx.playClick();
     const modal = document.getElementById("citizen-report-modal");
     if (modal) modal.classList.add("active");
+    if (window.soundFx) window.soundFx.playClick();
   }
 
   async submitCitizenReport() {
-    const hazardType = document.getElementById("cit-hazard-type").value;
-    const location = document.getElementById("cit-location").value.trim() || "Sector 4";
-    const desc = document.getElementById("cit-desc").value.trim();
+    const loc = document.getElementById("cit-location")?.value || "Sector 4";
+    const type = document.getElementById("cit-hazard-type")?.value || "stagnant_water";
+    const desc = document.getElementById("cit-desc")?.value || "Community report";
 
-    const note = `${hazardType} reported by ${this.user.name}: ${desc}`;
-    
-    // Inject caution/danger reading tagged to citizen report location
-    await API.simulate("danger");
-
+    const res = await API.logAlertAction("CITIZEN-REP-" + Date.now().toString().slice(-4), "Citizen / Field Reporter", `Spot Report: ${type} at ${loc} (${desc})`, false, false);
+    this.showToast("Report transmitted to Vector Control Team!");
     this.closeModal("citizen-report-modal");
-    if (window.soundFx) window.soundFx.playSuccess();
-    this.showToast(`📢 Report submitted for "${location}"! Health squad notified.`);
-    this.refreshData();
     this.renderAlertsScreen();
   }
 
+  // --------------------------------------------------------------------------
+  // Viva Simulation Trigger & Pump Controls
+  // --------------------------------------------------------------------------
+  async triggerScenario(scenario) {
+    this.showToast(`Injecting Scenario: ${scenario.replace('_', ' ').toUpperCase()}...`);
+    const res = await API.simulate(scenario);
+    if (res && res.success) {
+      this.showToast(`Scenario Injected! Updating telemetry...`);
+      setTimeout(() => {
+        this.refreshData();
+        this.initDashboardChartsAndFeeds();
+      }, 500);
+    } else {
+      this.showToast("Failed to inject simulation");
+    }
+  }
+
+  triggerPumpFromEmergency() {
+    controlPumpDirect("ON");
+    this.showToast("Emergency Drainage Pump Activated!");
+  }
+
+  // --------------------------------------------------------------------------
+  // Prevention Checklist State
+  // --------------------------------------------------------------------------
+  _initChecklistState() {
+    this.checklistState = JSON.parse(localStorage.getItem("mosquito_checklist") || "[false,false,false,false,false,false]");
+    this._updateChecklistUI();
+  }
+
+  toggleChecklist(index) {
+    this.checklistState[index] = !this.checklistState[index];
+    localStorage.setItem("mosquito_checklist", JSON.stringify(this.checklistState));
+    this._updateChecklistUI();
+    if (window.soundFx) window.soundFx.playClick();
+  }
+
+  _updateChecklistUI() {
+    const completed = this.checklistState.filter(Boolean).length;
+    const fill = document.getElementById("checklist-progress-fill");
+    const text = document.getElementById("checklist-progress-text");
+
+    if (fill) fill.style.width = `${(completed / 6) * 100}%`;
+    if (text) text.textContent = `${completed} / 6 Completed`;
+
+    const inputs = document.querySelectorAll(".checklist-items input[type='checkbox']");
+    inputs.forEach((inp, idx) => {
+      inp.checked = !!this.checklistState[idx];
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Theme Toggle (Dark / Light)
+  // --------------------------------------------------------------------------
   _initTheme() {
-    const isDark = localStorage.getItem("mosquito_theme") === "dark";
-    if (isDark) {
+    const saved = localStorage.getItem("mosquito_theme") || "dark";
+    const toggle = document.getElementById("theme-toggle-chk");
+    if (saved === "light") {
+      document.body.classList.remove("dark-mode");
+      if (toggle) toggle.checked = false;
+    } else {
       document.body.classList.add("dark-mode");
-      const toggle = document.getElementById("theme-toggle-chk");
       if (toggle) toggle.checked = true;
     }
   }
 
-  toggleDarkMode(enable) {
-    if (enable) {
-      document.body.classList.add("dark-mode");
-      localStorage.setItem("mosquito_theme", "dark");
-    } else {
-      document.body.classList.remove("dark-mode");
-      localStorage.setItem("mosquito_theme", "light");
-    }
+  toggleTheme() {
+    const isDark = document.body.classList.toggle("dark-mode");
+    localStorage.setItem("mosquito_theme", isDark ? "dark" : "light");
     if (window.soundFx) window.soundFx.playClick();
-  }
-
-  toggleSoundFx(enable) {
-    if (window.soundFx) {
-      window.soundFx.setSoundEnabled(enable);
-      this.showToast(enable ? "🔊 Sound effects enabled" : "🔇 Sound effects muted");
-    }
-  }
-
-  async injectScenario(scenario) {
-    const res = await API.simulate(scenario);
-    if (res.success) {
-      if (window.soundFx) {
-        if (scenario === "danger") window.soundFx.playBuzzerAlarm();
-        else window.soundFx.playSuccess();
-      }
-      this.showToast(`⚡ Injected IoT Scenario: ${scenario.toUpperCase()}`);
-      this.refreshData();
-      if (this.currentScreen === "screen-alerts") this.renderAlertsScreen();
-      if (this.currentScreen === "screen-history") this.renderHistoryScreen();
+    if (window.telemetryCharts) {
+      this.renderMonitorScreen();
     }
   }
 
   // --------------------------------------------------------------------------
-  // Event Bindings & Helpers
+  // Events Binding
   // --------------------------------------------------------------------------
   _bindEvents() {
-    // Delegate navigation so taps still work after any DOM re-render.
-    document.addEventListener("click", (event) => {
-      const tab = event.target.closest(".nav-tab-item");
-      if (!tab || !tab.dataset.screen) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      this.showScreen(tab.dataset.screen);
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if ((event.key !== "Enter" && event.key !== " ") || !event.target.matches(".nav-tab-item")) return;
-
-      event.preventDefault();
-      this.showScreen(event.target.dataset.screen);
-    });
-
-    // Alert filter chips
+    // Filter chips for alerts screen
     document.querySelectorAll(".filter-chip").forEach(chip => {
-      chip.addEventListener("click", (e) => {
+      chip.addEventListener("click", () => {
         document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
         chip.classList.add("active");
         const status = chip.dataset.status || "all";
@@ -726,34 +741,29 @@ class MosquitoApp {
     });
   }
 
+  // --------------------------------------------------------------------------
+  // Toast Notification Display
+  // --------------------------------------------------------------------------
   showToast(message) {
     const container = document.getElementById("toast-container");
     if (!container) return;
 
     const toast = document.createElement("div");
     toast.className = "toast-message";
-    toast.innerHTML = `<span>🦟</span> <span>${message}</span>`;
+    toast.innerHTML = `<span>⚡</span> <span>${message}</span>`;
     container.appendChild(toast);
 
     setTimeout(() => {
       toast.style.opacity = "0";
-      toast.style.transform = "translateY(-10px)";
+      toast.style.transform = "translateY(8px)";
+      toast.style.transition = "all 0.3s ease";
       setTimeout(() => toast.remove(), 300);
     }, 3200);
   }
-
-  _timeAgo(isoString) {
-    if (!isoString) return "Just now";
-    const diff = (Date.now() - new Date(isoString).getTime()) / 1000;
-    if (diff < 60) return "Just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
-  }
 }
 
-// Global App Instance
-window.app = new MosquitoApp();
+// Global App Initialization
 document.addEventListener("DOMContentLoaded", () => {
+  window.app = new MosquitoApp();
   window.app.init();
 });

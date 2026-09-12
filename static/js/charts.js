@@ -42,8 +42,8 @@ class TelemetryCharts {
           {
             label: "Water Level (%)",
             data: waterData.length ? waterData : [78],
-            borderColor: "#0284c7",
-            backgroundColor: "rgba(2, 132, 199, 0.15)",
+            borderColor: "#06b6d4",
+            backgroundColor: "rgba(6, 182, 212, 0.15)",
             fill: true,
             tension: 0.35,
             borderWidth: 2.5,
@@ -85,16 +85,18 @@ class TelemetryCharts {
             position: "top",
             labels: {
               boxWidth: 12,
-              font: { family: "'Segoe UI', sans-serif", size: 11, weight: "600" },
+              font: { family: "'Inter', sans-serif", size: 11, weight: "600" },
               color: textColor
             }
           },
           tooltip: {
-            backgroundColor: "rgba(15, 23, 42, 0.9)",
-            titleFont: { size: 12, weight: "bold" },
-            bodyFont: { size: 11 },
+            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            titleFont: { family: "'Inter', sans-serif", size: 12, weight: "bold" },
+            bodyFont: { family: "'Inter', sans-serif", size: 11 },
             padding: 10,
-            cornerRadius: 8
+            cornerRadius: 8,
+            borderColor: "rgba(255, 255, 255, 0.1)",
+            borderWidth: 1
           }
         },
         scales: {
@@ -109,7 +111,7 @@ class TelemetryCharts {
             max: 100,
             grid: { color: gridColor },
             ticks: { color: textColor, font: { size: 10 }, callback: v => v + "%" },
-            title: { display: true, text: "Water & Humidity", color: textColor, font: { size: 10 } }
+            title: { display: true, text: "Water & Humidity (%)", color: textColor, font: { size: 10, weight: "600" } }
           },
           yEnv: {
             type: "linear",
@@ -118,7 +120,7 @@ class TelemetryCharts {
             max: 45,
             grid: { drawOnChartArea: false },
             ticks: { color: "#f59e0b", font: { size: 10 }, callback: v => v + "°C" },
-            title: { display: true, text: "Temperature", color: "#f59e0b", font: { size: 10 } }
+            title: { display: true, text: "Temperature (°C)", color: "#f59e0b", font: { size: 10, weight: "600" } }
           }
         }
       }
@@ -135,9 +137,9 @@ class TelemetryCharts {
 
     const chart = this.liveChart;
     chart.data.labels.push(timeLabel);
-    chart.data.datasets[0].data.push(newRecord.WaterLevel);
-    chart.data.datasets[1].data.push(newRecord.Temperature);
-    chart.data.datasets[2].data.push(newRecord.Humidity);
+    chart.data.datasets[0].data.push(newRecord.WaterLevel ?? 0);
+    chart.data.datasets[1].data.push(newRecord.Temperature ?? 0);
+    chart.data.datasets[2].data.push(newRecord.Humidity ?? 0);
 
     // Keep last 15 points
     if (chart.data.labels.length > 15) {
@@ -176,7 +178,7 @@ class TelemetryCharts {
             label: "Water Level (%)",
             data: displayRecords.map(r => r.WaterLevel),
             backgroundColor: displayRecords.map(r => {
-              if (r.RiskLabel === "danger") return "rgba(239, 68, 68, 0.85)";
+              if (r.RiskLabel === "danger") return "rgba(244, 63, 94, 0.85)";
               if (r.RiskLabel === "caution") return "rgba(245, 158, 11, 0.85)";
               return "rgba(16, 185, 129, 0.85)";
             }),
@@ -230,13 +232,13 @@ class TelemetryCharts {
     this.riskDistChart = new Chart(ctx, {
       type: "doughnut",
       data: {
-        labels: ["Active Risk", "Resolved", "Safe Monitored"],
+        labels: ["High Risk Incidents", "Resolved Interventions", "Safe Cycles"],
         datasets: [
           {
             data: [activeCount, resolvedCount, safeCount],
-            backgroundColor: ["#ef4444", "#10b981", "#38bdf8"],
+            backgroundColor: ["#f43f5e", "#10b981", "#06b6d4"],
             borderWidth: 2,
-            borderColor: document.body.classList.contains("dark-mode") ? "#1e293b" : "#ffffff"
+            borderColor: document.body.classList.contains("dark-mode") ? "#131f37" : "#ffffff"
           }
         ]
       },
@@ -249,7 +251,7 @@ class TelemetryCharts {
             position: "bottom",
             labels: {
               boxWidth: 10,
-              font: { size: 11, weight: "600" },
+              font: { family: "'Inter', sans-serif", size: 11, weight: "600" },
               color: document.body.classList.contains("dark-mode") ? "#94a3b8" : "#64748b"
             }
           }
