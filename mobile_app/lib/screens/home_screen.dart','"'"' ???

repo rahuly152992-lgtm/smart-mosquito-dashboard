@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'services/api_service.dart';
+import 'providers/sensor_provider.dart';
+import 'screens/home_screen.dart';
+import 'screens/connection_screen.dart';
+
+void main() {
+  runApp(const MosquitoGuardApp());
+}
+
+class MosquitoGuardApp extends StatelessWidget {
+  const MosquitoGuardApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final lightTheme = ThemeData(
+      useMaterial3: true,
+      scaffoldBackgroundColor: const Color(0xFFF4FBF8),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF0F766E),
+        brightness: Brightness.light,
+      ),
+      cardTheme: CardTheme(
+        color: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      fontFamily: 'Inter',
+    );
+
+    final darkTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF0F766E),
+        brightness: Brightness.dark,
+      ),
+      fontFamily: 'Inter',
+    );
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SensorProvider()),
+        Provider(create: (_) => ApiService()),
+      ],
+      child: MaterialApp(
+        title: 'Mosquito Guard',
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: ThemeMode.system,
+        home: const AppHome(),
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 430),
+              child: child!,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class AppHome extends StatelessWidget {
+  const AppHome({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SensorProvider>(
+      builder: (context, sensorProvider, _) {
+        if (!sensorProvider.isConnected) {
+          return const ConnectionScreen();
+        }
+        return const HomeScreen();
+      },
+    );
+  }
+}
