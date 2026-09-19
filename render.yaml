@@ -1,7 +1,35 @@
 services:
   - type: web
-    name: mosquito-guard-mobile
+    name: smart-mosquito-dashboard
     runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
+    region: singapore
     plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn --config gunicorn.conf.py app:app
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: MAX_LOCAL_RECORDS
+        value: "500"
+      - key: FIREBASE_DB_URL
+        sync: false
+      - key: FIREBASE_AUTH
+        sync: false
+      - key: WATER_THRESHOLD
+        value: "70"
+      - key: TEMP_MIN
+        value: "20"
+      - key: TEMP_MAX
+        value: "32"
+      - key: HUMIDITY_MIN
+        value: "60"
+      - key: IMAGE_RISK_THRESHOLD
+        value: "65"
+      - key: DANGER_LEVEL
+        value: "2"
+      - key: CAUTION_LEVEL
+        value: "1"
