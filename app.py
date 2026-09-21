@@ -63,6 +63,31 @@ def api_health():
     }), 200
 
 
+def _start_keep_alive():
+    """Background thread to keep Render instance awake and prevent spin-down loading screens."""
+    import threading
+    import time
+    import urllib.request
+
+    def ping_worker():
+        # Wait 30 seconds after boot before first ping
+        time.sleep(30)
+        while True:
+            try:
+                # Ping local and public endpoints to prevent spin-down
+                urllib.request.urlopen("https://smart-mosquito-dashboard-1.onrender.com/api/health", timeout=10)
+            except Exception:
+                pass
+            # Sleep 10 minutes (Render spins down after 15 minutes of inactivity)
+            time.sleep(600)
+
+    t = threading.Thread(target=ping_worker, daemon=True)
+    t.start()
+
+# Start the keepalive daemon
+_start_keep_alive()
+
+
 # -----------------------------------------------------------------------------
 # Web Page Route
 # -----------------------------------------------------------------------------

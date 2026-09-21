@@ -1001,6 +1001,30 @@
   <button id="splash-retry-btn" onclick="app.retryBackendConnection()"></button>
 </div>
 
+<!-- Mobile Bottom Navigation Bar matching 5-Screen UI -->
+<nav class="app-bottom-nav" id="app-bottom-nav">
+  <button class="nav-tab-item active" data-screen="screen-home" onclick="app.showScreen('screen-home')">
+    <span class="tab-icon">🏠</span>
+    <span>Home</span>
+  </button>
+  <button class="nav-tab-item" data-screen="screen-monitor" onclick="app.showScreen('screen-monitor')">
+    <span class="tab-icon">📁</span>
+    <span>Projects</span>
+  </button>
+  <button class="nav-tab-item" data-screen="screen-history" onclick="app.showScreen('screen-history')">
+    <span class="tab-icon">📋</span>
+    <span>Tasks</span>
+  </button>
+  <button class="nav-tab-item" data-screen="screen-device" onclick="app.showScreen('screen-device')">
+    <span class="tab-icon">🔍</span>
+    <span>Explore</span>
+  </button>
+  <button class="nav-tab-item" data-screen="screen-profile" onclick="app.showScreen('screen-profile')">
+    <span class="tab-icon">👤</span>
+    <span>Profile</span>
+  </button>
+</nav>
+
 <!-- Toast Container -->
 <div class="toast-container" id="toast-container"></div>
 
