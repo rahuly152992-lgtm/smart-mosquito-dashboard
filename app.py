@@ -300,6 +300,26 @@ def api_device():
     return jsonify(device)
 
 
+@app.route("/api/device/control", methods=["POST"])
+def api_device_control():
+    """
+    Endpoint for dashboard to send control commands to the hardware (ESP32).
+    Accepts JSON like: {"pump_state": "ON", "pump_mode": "manual", "led_state": "YELLOW"}
+    The ESP32 should poll GET /api/device to see these changes and execute them.
+    """
+    payload = request.get_json(force=True, silent=True) or {}
+    
+    # Filter valid keys to prevent garbage data
+    valid_keys = ["pump_state", "pump_mode", "buzzer_state", "led_state"]
+    updates = {k: v for k, v in payload.items() if k in valid_keys}
+    
+    if not updates:
+        return jsonify({"error": "No valid control commands provided"}), 400
+        
+    updated_device = data_store.update_device_status(updates)
+    return jsonify({"success": True, "device": updated_device})
+
+
 # -----------------------------------------------------------------------------
 # Statistics & Report Export
 # -----------------------------------------------------------------------------
