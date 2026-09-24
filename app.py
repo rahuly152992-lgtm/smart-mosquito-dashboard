@@ -9,7 +9,7 @@ pump control, and data visualization.
 import csv
 import io
 from datetime import datetime
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request, session, redirect, url_for
 
 import config
 import data_store
@@ -89,10 +89,44 @@ _start_keep_alive()
 
 
 # -----------------------------------------------------------------------------
-# Web Page Route
+# Web Page Routes (Authentication & Dashboard)
 # -----------------------------------------------------------------------------
+
+# Hardcoded dummy credentials for basic security
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "password123"
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session["logged_in"] = True
+            return redirect(url_for("dashboard"))
+        else:
+            return render_template("login.html", error="Invalid username or password")
+            
+    # If already logged in, go to dashboard
+    if session.get("logged_in"):
+        return redirect(url_for("dashboard"))
+        
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session.pop("logged_in", None)
+    return redirect(url_for("login"))
+
+
 @app.route("/")
 def dashboard():
+    # Protect dashboard route
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+        
     return render_template(
         "index.html",
         using_firebase=data_store.USING_FIREBASE,
