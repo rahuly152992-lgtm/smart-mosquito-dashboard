@@ -15,46 +15,46 @@ class _AlertsTabState extends State<AlertsTab> {
 
   final List<Map<String, dynamic>> _alerts = [
     {
-      'type': 'comment',
-      'title': 'New Comment',
-      'subtitle': 'Prioritized notifications',
-      'color': Color(0xFF10B981),
-      'icon': Icons.chat_bubble_outline_rounded,
-    },
-    {
-      'type': 'team',
-      'title': 'Team Joined',
-      'subtitle': 'Prioritized notifications',
-      'color': Color(0xFFF97316),
-      'icon': Icons.groups_outlined,
-    },
-    {
-      'type': 'team',
-      'title': 'Team Joined',
-      'subtitle': 'Prioritized notifications',
-      'color': Color(0xFF38BDF8),
-      'icon': Icons.groups_outlined,
-    },
-    {
-      'type': 'comment',
-      'title': 'New Comment',
-      'subtitle': 'Prioritized notifications',
+      'type': 'danger',
+      'title': 'High Breeding Risk',
+      'subtitle': 'Stagnant water detected in Zone A',
       'color': Color(0xFFEF4444),
-      'icon': Icons.chat_bubble_outline_rounded,
+      'icon': Icons.warning_rounded,
     },
     {
-      'type': 'team',
-      'title': 'Team Joined',
-      'subtitle': 'Prioritized notifications',
-      'color': Color(0xFF10B981),
-      'icon': Icons.groups_outlined,
-    },
-    {
-      'type': 'team',
-      'title': 'Team Joined',
-      'subtitle': 'Prioritized notifications',
+      'type': 'warning',
+      'title': 'Battery Low',
+      'subtitle': 'Sensor #4 battery at 15%',
       'color': Color(0xFFF59E0B),
-      'icon': Icons.groups_outlined,
+      'icon': Icons.battery_alert_rounded,
+    },
+    {
+      'type': 'info',
+      'title': 'Pump Activated',
+      'subtitle': 'Water flushed automatically from Zone B',
+      'color': Color(0xFF38BDF8),
+      'icon': Icons.water_drop_rounded,
+    },
+    {
+      'type': 'danger',
+      'title': 'High Temp Alert',
+      'subtitle': 'Temperature exceeds 35°C in Zone C',
+      'color': Color(0xFFEF4444),
+      'icon': Icons.thermostat_rounded,
+    },
+    {
+      'type': 'success',
+      'title': 'System Online',
+      'subtitle': 'All sensors connected successfully',
+      'color': Color(0xFF10B981),
+      'icon': Icons.check_circle_rounded,
+    },
+    {
+      'type': 'warning',
+      'title': 'High Humidity',
+      'subtitle': 'Humidity level at 90% in Zone D',
+      'color': Color(0xFFF59E0B),
+      'icon': Icons.water_rounded,
     },
   ];
 
@@ -160,7 +160,7 @@ class _AlertsTabState extends State<AlertsTab> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: const [
                                 Text(
-                                  'CRITICAL ALERT:\nBudget Threshold Breached',
+                                  'CRITICAL ALERT:\nBreeding Risk Detected',
                                   style: TextStyle(
                                     color: AppColors.textPrimary,
                                     fontSize: 14,
@@ -187,7 +187,7 @@ class _AlertsTabState extends State<AlertsTab> {
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'Critical alert is a session budget threshold Threshold Breached.\nLine to full report',
+                        'AI Vision detected mosquito larvae/pupae.\nImmediate action required.',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,

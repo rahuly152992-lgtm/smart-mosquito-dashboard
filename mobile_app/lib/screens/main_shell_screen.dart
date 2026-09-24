@@ -105,10 +105,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_rounded, 'Home'),
-              _buildNavItem(1, Icons.dashboard_customize_outlined, 'Projects'),
-              _buildNavItem(2, Icons.check_box_outlined, 'Tasks'),
-              _buildNavItem(3, Icons.search_rounded, 'Explore'),
+              _buildNavItem(0, Icons.dashboard_rounded, 'Dashboard'),
+              _buildNavItem(1, Icons.location_on_outlined, 'Zones'),
+              _buildNavItem(2, Icons.settings_remote_outlined, 'Controls'),
+              _buildNavItem(3, Icons.notifications_none_rounded, 'Alerts'),
               _buildNavItem(4, Icons.person_rounded, 'Profile'),
             ],
           ),

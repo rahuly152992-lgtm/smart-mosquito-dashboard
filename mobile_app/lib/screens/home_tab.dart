@@ -41,7 +41,7 @@ class HomeTab extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'My Projects',
+                        'Sensor Overview',
                         style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 20,
@@ -149,7 +149,7 @@ class HomeTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Welcome, Aarav!',
+                'Welcome, Admin!',
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 18,
@@ -162,7 +162,7 @@ class HomeTab extends StatelessWidget {
                   Icon(Icons.location_on, color: AppColors.textMuted, size: 13),
                   SizedBox(width: 3),
                   Text(
-                    'Location Sector 4',
+                    'Zone A (Sector 4)',
                     style: TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 12,
@@ -249,7 +249,7 @@ class HomeTab extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text(
-                          'ProjectNaya',
+                          'Breeding Risk',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
@@ -272,7 +272,7 @@ class HomeTab extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         const Text(
-                          'Status: Active',
+                          'Status: High Risk',
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 11,
@@ -282,7 +282,7 @@ class HomeTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     const Text(
-                      'Progress Bar',
+                      'Risk Level',
                       style: TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 10,
@@ -325,7 +325,7 @@ class HomeTab extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text(
-                          'DesignSystem',
+                          'Battery Level',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
@@ -348,7 +348,7 @@ class HomeTab extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         const Text(
-                          'Status: Paused',
+                          'Status: Normal',
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 11,
@@ -379,7 +379,7 @@ class HomeTab extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text(
-                          'New Idea',
+                          'Temperature',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
@@ -402,7 +402,7 @@ class HomeTab extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         const Text(
-                          'Status: Draft',
+                          'Status: Optimal',
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 11,
@@ -425,7 +425,7 @@ class HomeTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Text(
-                      'Project Progress',
+                      'Water Level',
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
@@ -509,7 +509,7 @@ class HomeTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  '46y',
+                  '3',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 22,
@@ -518,7 +518,7 @@ class HomeTab extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Active Projects',
+                  'Active Sensors',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 12,
@@ -537,7 +537,7 @@ class HomeTab extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  '10',
+                  '12',
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 22,
@@ -546,7 +546,7 @@ class HomeTab extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Total Members',
+                  'Total Alerts',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 12,
@@ -569,7 +569,7 @@ class HomeTab extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Recent Activity',
+              'System Logs',
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 18,
@@ -596,21 +596,21 @@ class HomeTab extends StatelessWidget {
 
         // Activity Item 1
         _buildActivityItem(
-          icon: Icons.chat_bubble_outline_rounded,
+          icon: Icons.water_drop_outlined,
           iconBg: const Color(0xFF3B82F6),
-          title: 'Commented on Task...',
-          time: '1 hours ago',
-          subtitle: 'Hesless with your Document',
+          title: 'Pump Activated',
+          time: '1 hour ago',
+          subtitle: 'Water flushed from Zone A',
         ),
         const SizedBox(height: 12),
 
         // Activity Item 2
         _buildActivityItem(
-          icon: Icons.person_outline_rounded,
+          icon: Icons.warning_amber_rounded,
           iconBg: const Color(0xFFF97316),
-          title: 'Aaariaviate, Aaravi',
-          time: '10 hours ago',
-          subtitle: "Notifications's far merney.",
+          title: 'High Humidity Detected',
+          time: '3 hours ago',
+          subtitle: "Levels reached 85% in Sector 4.",
         ),
       ],
     );

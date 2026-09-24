@@ -100,6 +100,8 @@ DEFAULT_DEVICE_STATE = {
     "wifi_rssi": -62,
     "buzzer_state": "ACTIVE",  # "ACTIVE" or "OFF"
     "led_state": "RED",       # "GREEN", "YELLOW", "RED"
+    "pump_state": "OFF",      # "ON" or "OFF"
+    "pump_mode": "auto",      # "auto" or "manual"
     "last_sync": datetime.now().isoformat(),
     "firmware_version": "v2.4-ESP32-AI",
 }

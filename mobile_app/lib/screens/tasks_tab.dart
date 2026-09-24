@@ -15,39 +15,39 @@ class _TasksTabState extends State<TasksTab> {
 
   final List<Map<String, dynamic>> _tasks = [
     {
-      'title': "Task 'Design Review'",
-      'dueDate': '06 Nov',
-      'isOverdue': false,
-      'badges': ['red'],
-      'checked': false,
-    },
-    {
-      'title': 'Task Dessur Task',
-      'dueDate': '06 Nov',
-      'isOverdue': false,
-      'badges': ['green', 'red'],
-      'checked': false,
-    },
-    {
-      'title': "Task 'Design Review'",
-      'subtitle': 'Overdue',
+      'title': "Zone A (Sector 4)",
+      'dueDate': 'High Risk',
       'isOverdue': true,
       'badges': ['red_alert'],
       'checked': false,
     },
     {
-      'title': "Task 'Design Review'",
-      'dueDate': '06 Nov',
+      'title': 'Zone B (Lake View)',
+      'dueDate': 'Safe',
+      'isOverdue': false,
+      'badges': ['green', 'circle'],
+      'checked': true,
+    },
+    {
+      'title': "Zone C (Park Area)",
+      'subtitle': 'Water Temp 32°C',
+      'isOverdue': true,
+      'badges': ['warning'],
+      'checked': false,
+    },
+    {
+      'title': "Zone D (North)",
+      'dueDate': 'Caution',
       'isOverdue': false,
       'badges': ['warning', 'circle'],
       'checked': false,
     },
     {
-      'title': 'Task Decent Task',
-      'dueDate': '06 Nov',
+      'title': 'Zone E (South)',
+      'dueDate': 'Safe',
       'isOverdue': false,
-      'badges': ['green', 'red'],
-      'checked': false,
+      'badges': ['green'],
+      'checked': true,
     },
   ];
 
@@ -106,7 +106,7 @@ class _TasksTabState extends State<TasksTab> {
                       ),
                       const SizedBox(width: 14),
                       const Text(
-                        "Aarav's Tasks",
+                        "Zone Monitoring",
                         style: TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 20,
@@ -120,7 +120,7 @@ class _TasksTabState extends State<TasksTab> {
 
                   // 2. CORE FEATURES
                   const Text(
-                    'Core Features',
+                    'Quick Filters',
                     style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 16,
@@ -132,17 +132,17 @@ class _TasksTabState extends State<TasksTab> {
                     children: [
                       Expanded(
                         child: _buildFeatureCard(
-                          title: 'Email or',
-                          subtitle: 'Username',
-                          tag: 'Staw sitem',
+                          title: 'High Risk',
+                          subtitle: 'Zones',
+                          tag: 'Alerts',
                         ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: _buildFeatureCard(
-                          title: 'Member',
-                          subtitle: 'Password',
-                          tag: 'Staw sticon',
+                          title: 'Safe',
+                          subtitle: 'Zones',
+                          tag: 'Normal',
                         ),
                       ),
                     ],

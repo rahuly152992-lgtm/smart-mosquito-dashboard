@@ -48,7 +48,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   ),
                   const SizedBox(width: 14),
                   const Text(
-                    "Aarav's Profile",
+                    "Admin Profile",
                     style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 20,
@@ -102,7 +102,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     const SizedBox(height: 14),
                     const Text(
-                      'Aarav, Aarav!',
+                      'System Administrator',
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 19,
@@ -111,7 +111,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Project Lead',
+                      'Dashboard Manager',
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 13,
@@ -133,7 +133,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
               // 3. SKILLS / TAGS SECTION
               const Text(
-                'Skills',
+                'Roles',
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 15,
@@ -144,7 +144,7 @@ class _ProfileTabState extends State<ProfileTab> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: ['Skills', 'Timos', 'Frosting', 'Companies'].map((skill) {
+                children: ['Administrator', 'Technician', 'Health Official', 'Field Agent'].map((skill) {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
@@ -167,7 +167,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
               // 4. ACTIVITY FEED
               const Text(
-                'Activity Feed',
+                'Recent Actions',
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 15,
@@ -177,10 +177,10 @@ class _ProfileTabState extends State<ProfileTab> {
               const SizedBox(height: 12),
 
               _buildActivityFeedItem(
-                icon: Icons.chat_bubble_outline_rounded,
+                icon: Icons.settings_rounded,
                 iconBg: const Color(0xFF3B82F6),
-                title: 'Commented on Task...',
-                subtitle: 'Hesless with your Document',
+                title: 'Sensor Calibration',
+                subtitle: 'Calibrated Zone B Sensors',
                 time: '1 hours ago',
               ),
               const SizedBox(height: 10),
@@ -188,8 +188,8 @@ class _ProfileTabState extends State<ProfileTab> {
               _buildActivityFeedItem(
                 icon: Icons.person_outline_rounded,
                 iconBg: const Color(0xFFF97316),
-                title: 'Aaariaviate, Aaravi',
-                subtitle: "Notifications far merney.",
+                title: 'Admin Access',
+                subtitle: "Granted access to Technician A.",
                 time: '10 hours ago',
               ),
               const SizedBox(height: 24),

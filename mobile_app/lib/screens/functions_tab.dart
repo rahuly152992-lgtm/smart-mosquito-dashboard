@@ -17,34 +17,34 @@ class _FunctionsTabState extends State<FunctionsTab> {
 
   final List<Map<String, dynamic>> _functions = [
     {
-      'title': 'Create Project',
-      'icon': Icons.add_rounded,
-      'color': Color(0xFF8B5CF6),
-      'action': 'create_project',
-    },
-    {
-      'title': 'Manage Tasks',
-      'icon': Icons.checklist_rounded,
+      'title': 'Activate Pump',
+      'icon': Icons.water_drop_rounded,
       'color': Color(0xFF38BDF8),
-      'action': 'manage_tasks',
+      'action': 'activate_pump',
     },
     {
-      'title': 'Team Chat',
-      'icon': Icons.chat_bubble_rounded,
-      'color': Color(0xFFA855F7),
-      'action': 'team_chat',
-    },
-    {
-      'title': 'File Storage',
-      'icon': Icons.folder_rounded,
+      'title': 'Run Diagnostics',
+      'icon': Icons.settings_suggest_rounded,
       'color': Color(0xFFF59E0B),
-      'action': 'file_storage',
+      'action': 'run_diagnostics',
     },
     {
-      'title': 'Analytics Hub',
-      'icon': Icons.bar_chart_rounded,
+      'title': 'Calibrate Sensors',
+      'icon': Icons.tune_rounded,
+      'color': Color(0xFF8B5CF6),
+      'action': 'calibrate_sensors',
+    },
+    {
+      'title': 'View Camera',
+      'icon': Icons.camera_alt_rounded,
+      'color': Color(0xFF10B981),
+      'action': 'view_camera',
+    },
+    {
+      'title': 'Spray Control',
+      'icon': Icons.air_rounded,
       'color': Color(0xFF06B6D4),
-      'action': 'analytics_hub',
+      'action': 'spray_control',
     },
     {
       'title': 'Settings/\nConfigurations',
@@ -53,10 +53,10 @@ class _FunctionsTabState extends State<FunctionsTab> {
       'action': 'settings',
     },
     {
-      'title': 'User\nManagement',
-      'icon': Icons.people_alt_rounded,
-      'color': Color(0xFF10B981),
-      'action': 'user_management',
+      'title': 'Admin\nManagement',
+      'icon': Icons.security_rounded,
+      'color': Color(0xFFEC4899),
+      'action': 'admin_management',
     },
   ];
 
@@ -98,7 +98,7 @@ class _FunctionsTabState extends State<FunctionsTab> {
                   ),
                   const SizedBox(width: 14),
                   const Text(
-                    'All Functions',
+                    'System Controls',
                     style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 20,
