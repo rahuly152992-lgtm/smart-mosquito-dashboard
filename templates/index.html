@@ -1075,7 +1075,12 @@
 
   function controlPumpDirect(state) {
     if (window.API) {
-      API.controlPump('manual', state).then(() => {
+      API.controlPump('manual', state).then((result) => {
+        if (!result || !result.success) {
+          if (window.app) window.app.showToast('Unable to update drainage pump');
+          return;
+        }
+
         if (window.app) {
           window.app.showToast('Drainage Pump set to ' + state);
           const dot = document.getElementById('pump-state-dot');

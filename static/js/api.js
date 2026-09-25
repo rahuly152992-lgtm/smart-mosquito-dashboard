@@ -106,6 +106,23 @@ const API = {
     }
   },
 
+  async submitCitizenReport(location, hazardType, description) {
+    try {
+      return await this._fetchJson("/api/alerts/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          location: location,
+          hazard_type: hazardType,
+          description: description
+        })
+      });
+    } catch (err) {
+      console.error("API submitCitizenReport error:", err);
+      return { success: false, error: err.message };
+    }
+  },
+
   async getDevice() {
     try {
       return await this._fetchJson("/api/device");
@@ -117,10 +134,10 @@ const API = {
 
   async controlPump(mode, state) {
     try {
-      return await this._fetchJson("/api/pump/control", {
+      return await this._fetchJson("/api/device/control", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: mode, state: state })
+        body: JSON.stringify({ pump_mode: mode, pump_state: state })
       });
     } catch (err) {
       console.error("API controlPump error:", err);

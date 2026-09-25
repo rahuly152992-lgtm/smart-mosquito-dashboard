@@ -345,6 +345,39 @@ def log_alert_action(alert_id, actor, action_note, mark_cleaned=False, mark_reso
     return updated_alert
 
 
+def create_citizen_report(location, hazard_type, description):
+    alerts = _read_json(config.LOCAL_ALERTS_FILE, [])
+    now = datetime.now().isoformat()
+    report = {
+        "alert_id": f"REP-{uuid.uuid4().hex[:8].upper()}",
+        "title": "Citizen Report: Stagnant Water / Mosquito Spot",
+        "device_id": "CITIZEN-REPORT",
+        "location": location,
+        "water_level": 0,
+        "temperature": 0,
+        "humidity": 0,
+        "image_risk_score": 0,
+        "risk_level": "caution",
+        "risk_score": 1,
+        "status": "active",
+        "created_at": now,
+        "last_updated": now,
+        "reasons": [f"Reported hazard: {hazard_type}", description or "No additional description provided."],
+        "image_evidence": None,
+        "is_cleaned": False,
+        "actions_log": [{
+            "timestamp": now,
+            "actor": "Citizen / Field Reporter",
+            "action": f"Spot report submitted for {hazard_type}."
+        }],
+        "resolved_at": None,
+        "resolved_by": None,
+    }
+    alerts.insert(0, report)
+    _write_json(config.LOCAL_ALERTS_FILE, alerts)
+    return report
+
+
 # -----------------------------------------------------------------------------
 # Summary Statistics Engine
 # -----------------------------------------------------------------------------

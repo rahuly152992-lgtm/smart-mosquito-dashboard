@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/api_service.dart';
 import 'providers/sensor_provider.dart';
+import 'providers/app_state.dart';
 import 'theme/app_theme.dart';
 import 'screens/main_shell_screen.dart';
 
@@ -17,6 +18,7 @@ class MosquitoGuardApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AppState()),
         ChangeNotifierProvider(
           create: (_) => SensorProvider()..checkAndFetchData(isInitialLoad: true),
         ),

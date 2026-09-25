@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import 'home_tab.dart';
 import 'tasks_tab.dart';
@@ -60,6 +61,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
               ),
               FunctionsTab(
                 onBack: () => _onTabTapped(0),
+                onToolSelect: (action) => _handleToolAction(context, action),
               ),
               AlertsTab(
                 onBack: () => _onTabTapped(0),
@@ -79,6 +81,21 @@ class _MainShellScreenState extends State<MainShellScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _handleToolAction(BuildContext context, String action) async {
+    if (action == 'activate_pump') {
+      final success = await context.read<SensorProvider>().controlPump(true);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(success ? 'Pump activated' : 'Unable to activate pump')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Started: ${action.replaceAll('_', ' ')}')),
     );
   }
 

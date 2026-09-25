@@ -5,153 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Mosquito Guard Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-dark: #090C15;
-      --bg-surface: #0E1322;
-      --bg-card: #141A2D;
-      --primary: #8B5CF6;
-      --primary-hover: #7C3AED;
-      --text-primary: #FFFFFF;
-      --text-secondary: #94A3B8;
-      --border-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg-dark);
-      background-image: radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
-                        radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%);
-      color: var(--text-primary);
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    .login-container {
-      background: var(--bg-card);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border-color);
-      border-radius: 24px;
-      padding: 48px;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      position: relative;
-    }
-
-    /* Glow effect behind the card */
-    .login-container::before {
-      content: '';
-      position: absolute;
-      top: -2px; left: -2px; right: -2px; bottom: -2px;
-      background: linear-gradient(45deg, var(--primary), #06b6d4, #ec4899);
-      z-index: -1;
-      border-radius: 26px;
-      filter: blur(12px);
-      opacity: 0.3;
-    }
-
-    .logo-container {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
-    .logo-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-      display: inline-block;
-      background: linear-gradient(135deg, #8B5CF6, #3B82F6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .title {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .subtitle {
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-label {
-      display: block;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
-
-    .form-input {
-      width: 100%;
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--border-color);
-      color: var(--text-primary);
-      padding: 14px 16px;
-      border-radius: 12px;
-      font-size: 15px;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
-      background: rgba(0, 0, 0, 0.3);
-    }
-
-    .login-btn {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-top: 12px;
-    }
-
-    .login-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px -10px var(--primary);
-    }
-    
-    .login-btn:active {
-      transform: translateY(0);
-    }
-
-    .error-msg {
-      color: #EF4444;
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin-bottom: 20px;
-      text-align: center;
-      display: {% if error %}block{% else %}none{% endif %};
-    }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 </head>
 <body>
 
@@ -162,7 +16,7 @@
       <p class="subtitle">Enter your credentials to access the dashboard</p>
     </div>
 
-    <div class="error-msg">
+    <div class="error-msg{% if not error %} is-hidden{% endif %}" role="alert">
       {{ error }}
     </div>
 
@@ -180,6 +34,6 @@
       <button type="submit" class="login-btn">Sign In to Dashboard</button>
     </form>
   </div>
-
+  <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
 </html>

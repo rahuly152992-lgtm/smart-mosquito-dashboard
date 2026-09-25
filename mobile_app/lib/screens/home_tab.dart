@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/sensor_provider.dart';
+import '../providers/app_state.dart';
 
 class HomeTab extends StatelessWidget {
   final VoidCallback? onNotificationTap;
@@ -106,36 +107,39 @@ class HomeTab extends StatelessWidget {
     return Row(
       children: [
         // Avatar with Glowing Ring
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF8B5CF6), Color(0xFF38BDF8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
-                blurRadius: 12,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(2.5),
+        GestureDetector(
+          onTap: () => onNavigateTab?.call(4),
           child: Container(
-            decoration: const BoxDecoration(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFF1E293B),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF8B5CF6), Color(0xFF38BDF8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.4),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+              ],
             ),
-            child: ClipOval(
-              child: Image.network(
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Icon(Icons.person, color: Colors.white, size: 28),
+            padding: const EdgeInsets.all(2.5),
+            child: Container(
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF1E293B),
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(Icons.person, color: Colors.white, size: 28),
+                  ),
                 ),
               ),
             ),
@@ -148,12 +152,14 @@ class HomeTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Welcome, Admin!',
+              Consumer<AppState>(
+                builder: (context, appState, _) => Text(
+                'Welcome, ${appState.name}!',
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
+                ),
                 ),
               ),
               const SizedBox(height: 3),

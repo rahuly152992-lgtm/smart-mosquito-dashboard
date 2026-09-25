@@ -121,6 +121,18 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        if username and password:
+            session["logged_in"] = True
+            return redirect(url_for("dashboard"))
+        return render_template("register.html", error="Username and password are required")
+    return render_template("register.html")
+
+
 @app.route("/")
 def dashboard():
     # Protect dashboard route
@@ -196,6 +208,13 @@ def api_simulate():
     """
     payload = request.get_json(force=True, silent=True) or {}
     scenario = payload.get("scenario", "danger")
+    scenario_aliases = {
+        "high_risk": "danger",
+        "moderate_risk": "caution",
+        "dry": "safe",
+        "heavy_rain": "danger",
+    }
+    scenario = scenario_aliases.get(scenario, scenario)
 
     if scenario == "danger":
         rec = data_store.add_record(
@@ -248,6 +267,20 @@ def api_alert_details(alert_id):
     if not alert:
         return jsonify({"error": "Alert not found"}), 404
     return jsonify(alert)
+
+
+@app.route("/api/alerts/report", methods=["POST"])
+def api_citizen_report():
+    payload = request.get_json(force=True, silent=True) or {}
+    location = str(payload.get("location", "Sector 4")).strip()
+    hazard_type = str(payload.get("hazard_type", "stagnant_water")).strip()
+    description = str(payload.get("description", "Community report")).strip()
+
+    if not location:
+        return jsonify({"success": False, "error": "Location is required"}), 400
+
+    report = data_store.create_citizen_report(location, hazard_type, description)
+    return jsonify({"success": True, "alert": report}), 201
 
 
 @app.route("/api/alerts/<alert_id>/resolve", methods=["POST"])

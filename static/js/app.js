@@ -641,14 +641,28 @@ class MosquitoApp {
   }
 
   async submitCitizenReport() {
-    const loc = document.getElementById("cit-location")?.value || "Sector 4";
+    const loc = document.getElementById("cit-location")?.value.trim() || "";
     const type = document.getElementById("cit-hazard-type")?.value || "stagnant_water";
-    const desc = document.getElementById("cit-desc")?.value || "Community report";
+    const desc = document.getElementById("cit-desc")?.value.trim() || "Community report";
 
-    const res = await API.logAlertAction("CITIZEN-REP-" + Date.now().toString().slice(-4), "Citizen / Field Reporter", `Spot Report: ${type} at ${loc} (${desc})`, false, false);
+    if (!loc) {
+      this.showToast("Please enter a location for the report");
+      document.getElementById("cit-location")?.focus();
+      return;
+    }
+
+    const res = await API.submitCitizenReport(loc, type, desc);
+    if (!res || !res.success) {
+      this.showToast("Failed to transmit report");
+      return;
+    }
+
     this.showToast("Report transmitted to Vector Control Team!");
     this.closeModal("citizen-report-modal");
-    this.renderAlertsScreen();
+    document.getElementById("cit-location").value = "";
+    document.getElementById("cit-desc").value = "";
+    await this.refreshData();
+    await this.renderAlertsScreen();
   }
 
   // --------------------------------------------------------------------------
@@ -671,6 +685,15 @@ class MosquitoApp {
   triggerPumpFromEmergency() {
     controlPumpDirect("ON");
     this.showToast("Emergency Drainage Pump Activated!");
+  }
+
+  retryBackendConnection() {
+    this.refreshData();
+    this.initDashboardChartsAndFeeds();
+  }
+
+  setBackendStatus(message) {
+    this.showToast(message);
   }
 
   // --------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../providers/app_state.dart';
 
 class ProfileTab extends StatefulWidget {
   final VoidCallback? onBack;
@@ -16,6 +18,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -47,8 +50,8 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Text(
-                    "Admin Profile",
+                    Text(
+                      '${appState.name} Profile',
                     style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 20,
@@ -101,8 +104,8 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    const Text(
-                      'System Administrator',
+                    Text(
+                      appState.name,
                       style: TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 19,
@@ -110,8 +113,8 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Dashboard Manager',
+                    Text(
+                      appState.role,
                       style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 13,
@@ -119,8 +122,8 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      'contactinfo@gmail.com',
+                    Text(
+                      appState.email,
                       style: TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 12,
@@ -197,13 +200,7 @@ class _ProfileTabState extends State<ProfileTab> {
               // 5. EDIT PROFILE BUTTON (Gradient Pill)
               GestureDetector(
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Edit Profile opened'),
-                      duration: Duration(seconds: 1),
-                      backgroundColor: AppColors.bgCardAlt,
-                    ),
-                  );
+                  _showEditProfileDialog(context, appState);
                 },
                 child: Container(
                   width: double.infinity,
@@ -268,6 +265,44 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
       ),
     );
+  }
+
+  Future<void> _showEditProfileDialog(BuildContext context, AppState appState) async {
+    final nameController = TextEditingController(text: appState.name);
+    final emailController = TextEditingController(text: appState.email);
+    final roleController = TextEditingController(text: appState.role);
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email')),
+            TextField(controller: roleController, decoration: const InputDecoration(labelText: 'Role')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              appState.updateProfile(
+                name: nameController.text,
+                email: emailController.text,
+                role: roleController.text,
+              );
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    nameController.dispose();
+    emailController.dispose();
+    roleController.dispose();
   }
 
   Widget _buildActivityFeedItem({
