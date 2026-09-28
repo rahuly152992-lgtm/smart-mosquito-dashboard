@@ -1,4 +1,4 @@
-# Mosquito Guard - Google Play Store Deployment Guide
+# Alok's project - Google Play Store Deployment Guide
 
 ## Prerequisites
 - ✅ Flutter SDK installed
@@ -64,7 +64,7 @@ storeFile=/path/to/mosquito_guard_key.jks
 1. Go to: https://play.google.com/console
 2. Click **Create app**
 3. Fill in app details:
-   - **App name**: Mosquito Guard
+   - **App name**: Alok's project
    - **Default language**: English
    - **App type**: App
    - **Category**: Tools or Health & Fitness

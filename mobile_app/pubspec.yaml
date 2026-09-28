@@ -1,5 +1,5 @@
 name: mosquito_guard
-description: Smart mosquito breeding detection mobile app with real-time ESP32 sensor monitoring.
+description: Alok's project mobile app for real-time ESP32 sensor monitoring.
 
 publish_to: 'none'
 

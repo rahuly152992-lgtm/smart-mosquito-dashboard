@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mosquito Guard'),
+        title: const Text("Alok's project"),
         elevation: 0,
         actions: [
           Padding(

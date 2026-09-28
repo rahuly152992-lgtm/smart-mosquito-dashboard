@@ -1,4 +1,4 @@
-# Smart Mosquito Breeding Detection System 🦟💧
+# Alok's project
 
 An IoT-based real-time surveillance and early alert mobile web application connected to an ESP32 hardware device with Water Level Sensor, DHT22 Temperature & Humidity Sensor, AI Camera Vision detection, Local Buzzer/LED Warning, and a Relay-Controlled Drainage Pump.
 
@@ -76,7 +76,7 @@ Options:
 
 ## 📱 Features & Implemented Screens
 
-1. **Splash Screen**: App logo, app name (*Smart Mosquito Breeding Detection*), tagline (*"Detect Early. Alert Fast. Prevent Disease."*), and auto-transition.
+1. **Splash Screen**: App logo, app name (*Alok's project*), tagline (*"Detect Early. Alert Fast. Prevent Disease."*), and auto-transition.
 2. **Login Screen**: Email/Password authentication, remember me, forgot password, and one-click demo role switcher.
 3. **Home Dashboard**:
    - Status card (🟢 Safe Area / 🟡 Caution / 🔴 Breeding Risk Detected) with pulsing danger animations.

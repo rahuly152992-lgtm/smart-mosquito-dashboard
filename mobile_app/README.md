@@ -1,4 +1,4 @@
-# Mosquito Guard - Mobile App
+# Alok's project - Mobile App
 
 A native Android/iOS Flutter application for real-time mosquito breeding detection via ESP32 sensors.
 
@@ -263,7 +263,7 @@ For issues or questions:
 
 ## License
 
-Proprietary - Mosquito Guard Smart Detection System
+Proprietary - Alok's project
 
 ---
 

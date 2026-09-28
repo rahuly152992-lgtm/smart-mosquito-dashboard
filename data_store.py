@@ -633,7 +633,7 @@ def seed_initial_data(force=False):
 
     _write_json(config.LOCAL_DEVICE_FILE, {
         "device_id": "ESP32-01",
-        "device_name": "ESP32 Mosquito Guard Node #1",
+        "device_name": "ESP32 Sensor Node #1",
         "location": "Sector 4 - Drainage Sump A, Green Valley",
         "latitude": config.DEFAULT_LATITUDE,
         "longitude": config.DEFAULT_LONGITUDE,

@@ -25,7 +25,7 @@ class MosquitoGuardApp extends StatelessWidget {
         Provider(create: (_) => ApiService()),
       ],
       child: MaterialApp(
-        title: 'Mosquito Guard',
+        title: "Alok's project",
         theme: AppTheme.darkTheme,
         themeMode: ThemeMode.dark,
         home: const AppHome(),

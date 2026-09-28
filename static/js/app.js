@@ -603,7 +603,7 @@ class MosquitoApp {
     const battEl = document.getElementById("dev-screen-batt");
     const syncEl = document.getElementById("dev-screen-sync");
 
-    if (nameEl) nameEl.textContent = dev.device_name || "ESP32 Mosquito Guard Node #1";
+    if (nameEl) nameEl.textContent = dev.device_name || "ESP32 Sensor Node #1";
     if (idEl) idEl.textContent = dev.device_id || "ESP32-MG-01";
     if (rssiEl) rssiEl.textContent = `${dev.rssi || -64} dBm (Signal Strong)`;
     if (battEl) battEl.textContent = `${dev.battery_level || 94}% (Li-Ion 4.18V)`;
