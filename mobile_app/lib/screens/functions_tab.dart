@@ -23,42 +23,54 @@ class _FunctionsTabState extends State<FunctionsTab> {
       'action': 'activate_pump',
     },
     {
-      'title': 'Run Diagnostics',
+      'title': 'Inject High Risk',
       'icon': Icons.settings_suggest_rounded,
       'color': Color(0xFFF59E0B),
-      'action': 'run_diagnostics',
+      'action': 'simulate_high_risk',
     },
     {
-      'title': 'Calibrate Sensors',
+      'title': 'Inject Caution',
       'icon': Icons.tune_rounded,
       'color': Color(0xFF8B5CF6),
-      'action': 'calibrate_sensors',
+      'action': 'simulate_caution',
     },
     {
-      'title': 'View Camera',
+      'title': 'Inject Safe State',
       'icon': Icons.camera_alt_rounded,
       'color': Color(0xFF10B981),
-      'action': 'view_camera',
+      'action': 'simulate_safe',
     },
     {
-      'title': 'Spray Control',
+      'title': 'Officer Profile',
+      'icon': Icons.person_outline_rounded,
+      'color': Color(0xFF4CAF50),
+      'action': 'view_profile',
+    },
+    {
+      'title': 'Refresh Telemetry',
       'icon': Icons.air_rounded,
       'color': Color(0xFF06B6D4),
-      'action': 'spray_control',
+      'action': 'refresh_data',
     },
     {
-      'title': 'Settings/\nConfigurations',
+      'title': 'View Alerts',
       'icon': Icons.settings_rounded,
       'color': Color(0xFF94A3B8),
-      'action': 'settings',
+      'action': 'view_alerts',
     },
     {
-      'title': 'Admin\nManagement',
+      'title': 'Sensor History',
       'icon': Icons.security_rounded,
       'color': Color(0xFFEC4899),
-      'action': 'admin_management',
+      'action': 'view_history',
     },
   ];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

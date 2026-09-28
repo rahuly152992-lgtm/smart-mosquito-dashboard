@@ -140,7 +140,7 @@ class MosquitoApp {
 
       this.latestRecord = data.record;
       this.deviceState = data.device;
-      this.systemStats = data.stats;
+      this.systemStats = data.stats || await API.getStats();
 
       this._updateUIHeaderAndBadges();
       this._updateHomeScreen();
@@ -605,7 +605,7 @@ class MosquitoApp {
 
     if (nameEl) nameEl.textContent = dev.device_name || "ESP32 Sensor Node #1";
     if (idEl) idEl.textContent = dev.device_id || "ESP32-MG-01";
-    if (rssiEl) rssiEl.textContent = `${dev.rssi || -64} dBm (Signal Strong)`;
+    if (rssiEl) rssiEl.textContent = `${dev.wifi_rssi || dev.rssi || -64} dBm (Signal Strong)`;
     if (battEl) battEl.textContent = `${dev.battery_level || 94}% (Li-Ion 4.18V)`;
     if (syncEl) syncEl.textContent = dev.status === "connected" ? "HTTPS REST / Live SSE" : "Offline";
   }

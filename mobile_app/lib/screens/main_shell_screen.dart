@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/sensor_provider.dart';
 import '../theme/app_theme.dart';
 import 'home_tab.dart';
 import 'tasks_tab.dart';
@@ -16,6 +17,26 @@ class MainShellScreen extends StatefulWidget {
 
 class _MainShellScreenState extends State<MainShellScreen> {
   int _currentIndex = 0;
+  late final SensorProvider _sensorProvider;
+  late final Future<void> _initialLoad;
+  bool _didLoad = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didLoad) return;
+    _didLoad = true;
+    _sensorProvider = context.read<SensorProvider>();
+    _initialLoad = _sensorProvider.checkAndFetchData(isInitialLoad: true);
+    _refreshPeriodically();
+  }
+
+  Future<void> _refreshPeriodically() async {
+    while (mounted) {
+      await Future<void>.delayed(const Duration(seconds: 10));
+      if (mounted) await _sensorProvider.checkAndFetchData();
+    }
+  }
 
   void _onTabTapped(int index) {
     setState(() {
@@ -49,9 +70,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
           ),
 
           // Main Tab Views
-          IndexedStack(
-            index: _currentIndex,
-            children: [
+          FutureBuilder<void>(
+            future: _initialLoad,
+            builder: (context, snapshot) => IndexedStack(
+              index: _currentIndex,
+              children: [
               HomeTab(
                 onNotificationTap: () => _onTabTapped(3),
                 onNavigateTab: (idx) => _onTabTapped(idx),
@@ -69,7 +92,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
               ProfileTab(
                 onBack: () => _onTabTapped(0),
               ),
-            ],
+              ],
+            ),
           ),
 
           // Floating Glassmorphic Bottom Navigation Bar
@@ -91,6 +115,35 @@ class _MainShellScreenState extends State<MainShellScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(success ? 'Pump activated' : 'Unable to activate pump')),
       );
+      return;
+    }
+
+    final provider = context.read<SensorProvider>();
+    if (action.startsWith('simulate_')) {
+      final scenario = action.substring('simulate_'.length);
+      final success = await provider.simulate(scenario);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(success ? 'Scenario injected: $scenario' : 'Unable to inject scenario')),
+      );
+      return;
+    }
+    if (action == 'refresh_data') {
+      await provider.checkAndFetchData();
+      return;
+    }
+    if (action == 'view_alerts') {
+      _onTabTapped(3);
+      await provider.fetchAlerts();
+      return;
+    }
+    if (action == 'view_history') {
+      _onTabTapped(1);
+      await provider.fetchRecords();
+      return;
+    }
+    if (action == 'view_profile') {
+      _onTabTapped(4);
       return;
     }
 

@@ -39,6 +39,7 @@ def _get_cached_latest():
         result = {
             "record": record or {},
             "device": device or {},
+            "stats": data_store.get_system_stats(),
             "backend": "firebase" if data_store.USING_FIREBASE else "local-storage"
         }
         
@@ -197,6 +198,7 @@ def api_ingest():
         longitude=longitude,
         device_id=device_id
     )
+    _latest_cache["time"] = 0
     return jsonify(record), 201
 
 
@@ -211,8 +213,6 @@ def api_simulate():
     scenario_aliases = {
         "high_risk": "danger",
         "moderate_risk": "caution",
-        "dry": "safe",
-        "heavy_rain": "danger",
     }
     scenario = scenario_aliases.get(scenario, scenario)
 
@@ -240,12 +240,29 @@ def api_simulate():
             image_risk_score=5.0,
             device_id="ESP32-01"
         )
+    elif scenario == "dry":
+        rec = data_store.add_record(
+            water_level=0.0,
+            temperature=22.0,
+            humidity=40.0,
+            image_risk_score=0.0,
+            device_id="ESP32-01"
+        )
+    elif scenario == "heavy_rain":
+        rec = data_store.add_record(
+            water_level=95.0,
+            temperature=26.0,
+            humidity=92.0,
+            image_risk_score=70.0,
+            device_id="ESP32-01"
+        )
     elif scenario == "reset":
         data_store.seed_initial_data(force=True)
         rec = data_store.get_latest_record()
     else:
         rec = data_store.get_latest_record()
 
+    _latest_cache["time"] = 0
     return jsonify({"success": True, "scenario": scenario, "record": rec})
 
 
@@ -280,6 +297,7 @@ def api_citizen_report():
         return jsonify({"success": False, "error": "Location is required"}), 400
 
     report = data_store.create_citizen_report(location, hazard_type, description)
+    _latest_cache["time"] = 0
     return jsonify({"success": True, "alert": report}), 201
 
 
@@ -298,6 +316,7 @@ def api_resolve_alert(alert_id):
     if not active_dangers:
         data_store.update_device_status({"buzzer_state": "OFF", "led_state": "GREEN"})
 
+    _latest_cache["time"] = 0
     return jsonify({"success": True, "alert_id": alert_id, "status": "resolved"})
 
 
@@ -320,6 +339,7 @@ def api_alert_action(alert_id):
     if not updated_alert:
         return jsonify({"error": "Alert not found"}), 404
 
+    _latest_cache["time"] = 0
     return jsonify({"success": True, "alert": updated_alert})
 
 
@@ -350,6 +370,7 @@ def api_device_control():
         return jsonify({"error": "No valid control commands provided"}), 400
         
     updated_device = data_store.update_device_status(updates)
+    _latest_cache["time"] = 0
     return jsonify({"success": True, "device": updated_device})
 
 

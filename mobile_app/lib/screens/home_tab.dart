@@ -20,8 +20,8 @@ class HomeTab extends StatelessWidget {
     return Consumer<SensorProvider>(
       builder: (context, provider, _) {
         final reading = provider.latestReading;
-        final temp = reading?['temperature'] ?? 28.5;
-        final humidity = reading?['humidity'] ?? 65;
+        final temp = reading?['temperature'] ?? '--';
+        final humidity = reading?['humidity'] ?? '--';
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -84,11 +84,11 @@ class HomeTab extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   // 3. 2x2 PROJECT CARDS GRID
-                  _buildProjectsGrid(context),
+                  _buildProjectsGrid(context, provider),
                   const SizedBox(height: 20),
 
                   // 4. STATS COUNTERS ROW
-                  _buildStatsRow(),
+                  _buildStatsRow(provider),
                   const SizedBox(height: 28),
 
                   // 5. RECENT ACTIVITY SECTION
@@ -239,234 +239,60 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildProjectsGrid(BuildContext context) {
+  Widget _buildProjectsGrid(BuildContext context, SensorProvider provider) {
+    final reading = provider.latestReading ?? {};
+    final risk = (reading['risk_level'] ?? 'unknown').toString();
+    final riskScore = reading['risk_score'] is num
+        ? (reading['risk_score'] as num).toDouble()
+        : 0.0;
+    final water = reading['water_level'] ?? '--';
+    final temperature = reading['temperature'] ?? '--';
+    final humidity = reading['humidity'] ?? '--';
+    final battery = provider.deviceStatus?['battery_level'] ?? '--';
+
+    Widget metricCard(String title, String value, Color color, double progress) {
+      final normalized = progress.clamp(0.0, 1.0).toDouble();
+      return Expanded(
+        child: _buildGlassCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+              const SizedBox(height: 10),
+              Text(value, style: TextStyle(color: color, fontSize: 19, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: normalized,
+                  minHeight: 6,
+                  backgroundColor: Colors.white.withOpacity(0.08),
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
-        // Row 1: ProjectNaya & DesignSystem
-        Row(
-          children: [
-            // Card 1: ProjectNaya
-            Expanded(
-              child: _buildGlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Breeding Risk',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Icon(Icons.chevron_right, color: AppColors.textMuted, size: 18),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Status: High Risk',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Risk Level',
-                      style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Container(
-                        height: 6,
-                        color: Colors.white.withOpacity(0.08),
-                        child: FractionallySizedBox(
-                          widthFactor: 0.72,
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)],
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-
-            // Card 2: DesignSystem
-            Expanded(
-              child: _buildGlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Battery Level',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Icon(Icons.chevron_right, color: AppColors.textMuted, size: 18),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.warning,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Status: Normal',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    _buildAvatarStack(3),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+        Row(children: [
+          metricCard('Breeding Risk', risk.toUpperCase(), risk == 'danger' ? AppColors.danger : (risk == 'caution' ? AppColors.warning : AppColors.success), riskScore / 100),
+          const SizedBox(width: 14),
+          metricCard('Battery Level', '$battery%', AppColors.primaryLight, (battery is num ? battery.toDouble() / 100 : 0)),
+        ]),
         const SizedBox(height: 14),
-
-        // Row 2: New Idea & Project Progress (Radial Ring)
-        Row(
-          children: [
-            // Card 3: New Idea
-            Expanded(
-              child: _buildGlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          'Temperature',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Icon(Icons.chevron_right, color: AppColors.textMuted, size: 18),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.accentPink,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Status: Optimal',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    _buildAvatarStack(2),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-
-            // Card 4: Project Progress Circular Ring
-            Expanded(
-              child: _buildGlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Water Level',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: 58,
-                      height: 58,
-                      child: CustomPaint(
-                        painter: _ProgressRingPainter(
-                          progress: 0.42,
-                          strokeWidth: 5.5,
-                          trackColor: Colors.white.withOpacity(0.08),
-                          progressColor: const Color(0xFF8B5CF6),
-                          accentColor: const Color(0xFFF97316),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            '42%',
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        Row(children: [
+          metricCard('Temperature', '$temperature°C', AppColors.accentPink, (temperature is num ? (temperature.toDouble() / 50) : 0)),
+          const SizedBox(width: 14),
+          metricCard('Water Level', '$water%', AppColors.primaryLight, (water is num ? water.toDouble() / 100 : 0)),
+        ]),
+        const SizedBox(height: 14),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text('Relative humidity: $humidity%', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
         ),
       ],
     );
@@ -505,7 +331,7 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(SensorProvider provider) {
     return Row(
       children: [
         Expanded(
@@ -513,24 +339,13 @@ class HomeTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  '3',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  provider.deviceStatus?['status'] == 'connected' ? '1' : '0',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Active Sensors',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                const SizedBox(height: 4),
+                const Text('Connected Devices', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -541,24 +356,13 @@ class HomeTab extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  '12',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  '${provider.stats['active_alerts'] ?? provider.alerts.where((a) => a is Map && a['status'] == 'active').length}',
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Total Alerts',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                const SizedBox(height: 4),
+                const Text('Active Alerts', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
               ],
             ),
           ),

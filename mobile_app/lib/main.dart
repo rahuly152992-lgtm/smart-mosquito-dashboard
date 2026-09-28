@@ -19,9 +19,7 @@ class MosquitoGuardApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
-        ChangeNotifierProvider(
-          create: (_) => SensorProvider()..checkAndFetchData(isInitialLoad: true),
-        ),
+        ChangeNotifierProvider(create: (_) => SensorProvider()),
         Provider(create: (_) => ApiService()),
       ],
       child: MaterialApp(

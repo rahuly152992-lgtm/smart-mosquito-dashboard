@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 class AppState extends ChangeNotifier {
-  String _name = 'System Administrator';
-  String _email = 'contactinfo@gmail.com';
-  String _role = 'Dashboard Manager';
+  String _name = 'Dr. Alok Verma';
+  String _email = 'alok.verma@health.gov.in';
+  String _role = 'Field Officer';
   bool _isLoggedIn = true;
 
   String get name => _name;

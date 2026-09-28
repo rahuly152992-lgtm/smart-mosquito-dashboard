@@ -5,26 +5,14 @@ import '../services/api_service.dart';
 class SensorProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
   
-  bool _isConnected = true;
+  bool _isConnected = false;
   bool _isLoading = false;
   String? _error;
   
-  Map<String, dynamic>? _latestReading = {
-    'temperature': 28.5,
-    'humidity': 65.0,
-    'risk_level': 'SAFE',
-    'water_detected': false,
-    'timestamp': 'Just now',
-    'alerts': ['Budget Threshold Breached - System Active']
-  };
-
-  Map<String, dynamic>? _deviceStatus = {
-    'name': 'ESP32 Node #1',
-    'status': 'online',
-    'ip': '192.168.1.108',
-    'rssi': -64
-  };
-
+  Map<String, dynamic>? _latestReading;
+  Map<String, dynamic>? _deviceStatus;
+  Map<String, dynamic> _stats = {};
+  List<dynamic> _alerts = [];
   List<dynamic> _records = [];
 
   // Getters
@@ -34,6 +22,8 @@ class SensorProvider extends ChangeNotifier {
   Map<String, dynamic>? get latestReading => _latestReading;
   Map<String, dynamic>? get deviceStatus => _deviceStatus;
   List<dynamic> get records => _records;
+  Map<String, dynamic> get stats => _stats;
+  List<dynamic> get alerts => _alerts;
 
   /// Check if hardware is connected and fetch latest data in background
   /// Never blocks the UI or shows a full-screen loading spinner
@@ -71,7 +61,11 @@ class SensorProvider extends ChangeNotifier {
       if (data['device'] != null) {
         _deviceStatus = data['device'] as Map<String, dynamic>?;
       }
-      _isConnected = true;
+      _stats = Map<String, dynamic>.from(data['stats'] as Map? ?? {});
+      _isConnected = _deviceStatus?['status'] == 'connected';
+      if (_isConnected) {
+        await fetchAlerts();
+      }
       _error = null;
       
     } catch (e) {
@@ -94,11 +88,58 @@ class SensorProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> fetchAlerts({String status = 'all'}) async {
+    try {
+      _alerts = await _apiService.getAlerts(status: status);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> resolveAlert(String alertId, String resolvedBy) async {
+    try {
+      final result = await _apiService.resolveAlert(alertId, resolvedBy);
+      if (result['success'] == true) {
+        await fetchAlerts();
+        await checkAndFetchData();
+        return true;
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+    return false;
+  }
+
+  Future<bool> simulate(String scenario) async {
+    try {
+      final result = await _apiService.simulate(scenario);
+      if (result['success'] == true) {
+        await checkAndFetchData();
+        await fetchRecords();
+        return true;
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+    return false;
+  }
+
   /// Control pump
   Future<bool> controlPump(bool enable) async {
     try {
-      await _apiService.controlPump(enable);
-      return true;
+      final result = await _apiService.controlPump(enable);
+      if (result['success'] == true) {
+        _deviceStatus = Map<String, dynamic>.from(result['device'] as Map);
+        notifyListeners();
+        return true;
+      }
+      _error = result['error']?.toString() ?? 'Pump control failed';
+      notifyListeners();
+      return false;
     } catch (e) {
       _error = e.toString();
       notifyListeners();

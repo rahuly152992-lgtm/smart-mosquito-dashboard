@@ -1,62 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
+import '../providers/sensor_provider.dart';
 import '../theme/app_theme.dart';
 
 class AlertsTab extends StatefulWidget {
   final VoidCallback? onBack;
-
   const AlertsTab({Key? key, this.onBack}) : super(key: key);
-
   @override
   State<AlertsTab> createState() => _AlertsTabState();
 }
 
 class _AlertsTabState extends State<AlertsTab> {
-  bool _showCriticalAlert = true;
+  String _filter = 'all';
 
-  final List<Map<String, dynamic>> _alerts = [
-    {
-      'type': 'danger',
-      'title': 'High Breeding Risk',
-      'subtitle': 'Stagnant water detected in Zone A',
-      'color': Color(0xFFEF4444),
-      'icon': Icons.warning_rounded,
-    },
-    {
-      'type': 'warning',
-      'title': 'Battery Low',
-      'subtitle': 'Sensor #4 battery at 15%',
-      'color': Color(0xFFF59E0B),
-      'icon': Icons.battery_alert_rounded,
-    },
-    {
-      'type': 'info',
-      'title': 'Pump Activated',
-      'subtitle': 'Water flushed automatically from Zone B',
-      'color': Color(0xFF38BDF8),
-      'icon': Icons.water_drop_rounded,
-    },
-    {
-      'type': 'danger',
-      'title': 'High Temp Alert',
-      'subtitle': 'Temperature exceeds 35°C in Zone C',
-      'color': Color(0xFFEF4444),
-      'icon': Icons.thermostat_rounded,
-    },
-    {
-      'type': 'success',
-      'title': 'System Online',
-      'subtitle': 'All sensors connected successfully',
-      'color': Color(0xFF10B981),
-      'icon': Icons.check_circle_rounded,
-    },
-    {
-      'type': 'warning',
-      'title': 'High Humidity',
-      'subtitle': 'Humidity level at 90% in Zone D',
-      'color': Color(0xFFF59E0B),
-      'icon': Icons.water_rounded,
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<SensorProvider>().fetchAlerts();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,216 +28,80 @@ class _AlertsTabState extends State<AlertsTab> {
       backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. TOP HEADER: Back Button, Title, Filter Funnel
-              Row(
+        child: Consumer<SensorProvider>(
+          builder: (context, provider, _) {
+            final alerts = provider.alerts.where((item) {
+              if (item is! Map) return false;
+              return _filter == 'all' || item['status'] == _filter;
+            }).toList();
+            final activeDanger = alerts.where((a) => a['status'] == 'active' && a['risk_level'] == 'danger').isNotEmpty;
+            return RefreshIndicator(
+              onRefresh: () => provider.fetchAlerts(status: 'all'),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
                 children: [
-                  GestureDetector(
-                    onTap: widget.onBack,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.bgCard,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.borderCard),
-                      ),
-                      child: const Icon(
-                        Icons.chevron_left_rounded,
-                        color: AppColors.textPrimary,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  const Expanded(
-                    child: Text(
-                      'System Alerts',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.bgCard,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.borderCard),
-                    ),
-                    child: const Icon(
-                      Icons.filter_list_rounded,
-                      color: AppColors.textSecondary,
-                      size: 20,
-                    ),
-                  ),
+                  Row(children: [
+                    GestureDetector(onTap: widget.onBack, child: Container(width: 40, height: 40, decoration: BoxDecoration(color: AppColors.bgCard, shape: BoxShape.circle, border: Border.all(color: AppColors.borderCard)), child: const Icon(Icons.chevron_left_rounded, color: AppColors.textPrimary))),
+                    const SizedBox(width: 14),
+                    const Expanded(child: Text('System Alerts', style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700))),
+                    IconButton(onPressed: () => provider.fetchAlerts(status: 'all'), icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary)),
+                  ]),
+                  const SizedBox(height: 18),
+                  if (activeDanger) Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFF281118), borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.danger.withOpacity(0.5))), child: const Text('CRITICAL ALERT: Active breeding risk detected. Review the incident and take action.', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600))),
+                  if (activeDanger) const SizedBox(height: 16),
+                  Wrap(spacing: 8, children: ['all', 'active', 'resolved'].map((value) => ChoiceChip(label: Text(value[0].toUpperCase() + value.substring(1)), selected: _filter == value, onSelected: (_) => setState(() => _filter = value)).toList()),
+                  const SizedBox(height: 12),
+                  if (provider.isLoading && alerts.isEmpty) const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
+                  if (!provider.isLoading && alerts.isEmpty) const Padding(padding: EdgeInsets.all(28), child: Center(child: Text('No alerts recorded.', style: TextStyle(color: AppColors.textMuted)))),
+                  ...alerts.map((alert) => _buildAlertCard(context, alert, provider)),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // 2. CRITICAL ALERT BANNER
-              if (_showCriticalAlert) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF281118),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.danger.withOpacity(0.5)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.danger.withOpacity(0.2),
-                        blurRadius: 16,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: AppColors.danger.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.warning_amber_rounded,
-                              color: AppColors.danger,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'CRITICAL ALERT:\nBreeding Risk Detected',
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.25,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _showCriticalAlert = false;
-                              });
-                            },
-                            child: const Icon(
-                              Icons.close_rounded,
-                              color: AppColors.textMuted,
-                              size: 20,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'AI Vision detected mosquito larvae/pupae.\nImmediate action required.',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-
-              // 3. NOTIFICATION LIST
-              ..._alerts.map((item) {
-                final Color itemColor = item['color'];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgCard,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.borderCard),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: itemColor.withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: itemColor.withOpacity(0.35)),
-                          ),
-                          child: Icon(
-                            item['icon'],
-                            color: itemColor,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item['title'],
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                item['subtitle'],
-                                style: const TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppColors.textMuted,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-              const SizedBox(height: 100), // padding for bottom nav
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
+  }
+
+  Widget _buildAlertCard(BuildContext context, Map alert, SensorProvider provider) {
+    final resolved = alert['status'] == 'resolved';
+    final danger = alert['risk_level'] == 'danger';
+    final color = resolved ? AppColors.success : (danger ? AppColors.danger : AppColors.warning);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.borderCard)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [Expanded(child: Text('${alert['title'] ?? 'Breeding risk alert'}', style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))), Text(resolved ? 'RESOLVED' : (danger ? 'HIGH RISK' : 'CAUTION'), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700))]),
+        const SizedBox(height: 6),
+        Text('📍 ${alert['location'] ?? 'Unknown location'}  ·  ${alert['created_at'] ?? ''}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+        const SizedBox(height: 8),
+        Text('Water ${alert['water_level'] ?? '--'}%  ·  Temp ${alert['temperature'] ?? '--'}°C  ·  Humidity ${alert['humidity'] ?? '--'}%', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        const SizedBox(height: 10),
+        Row(children: [
+          TextButton(onPressed: () => _showDetails(context, alert), child: const Text('Details')),
+          const Spacer(),
+          if (!resolved) FilledButton.tonalIcon(
+            onPressed: provider.isLoading ? null : () async {
+              final name = context.read<AppState>().name;
+              final success = await provider.resolveAlert('${alert['alert_id']}', name);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(success ? 'Alert resolved' : 'Unable to resolve alert')));
+            },
+            icon: const Icon(Icons.check, size: 16), label: const Text('Resolve'),
+          ),
+        ]),
+      ]),
+    );
+  }
+
+  void _showDetails(BuildContext context, Map alert) {
+    final reasons = (alert['reasons'] as List?)?.join('\n• ') ?? 'No detection details available.';
+    showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
+      title: Text('${alert['title'] ?? 'Alert details'}'),
+      content: SingleChildScrollView(child: Text('ID: ${alert['alert_id'] ?? '--'}\nDevice: ${alert['device_id'] ?? '--'}\nLocation: ${alert['location'] ?? '--'}\nWater: ${alert['water_level'] ?? '--'}%\nTemperature: ${alert['temperature'] ?? '--'}°C\nHumidity: ${alert['humidity'] ?? '--'}%\n\nDetection drivers:\n• $reasons')),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close'))],
+    ));
   }
 }

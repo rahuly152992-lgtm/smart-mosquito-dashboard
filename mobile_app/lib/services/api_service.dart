@@ -21,6 +21,30 @@ class ApiService {
       ),
     );
   }
+
+  Map<String, dynamic> _normalizeRecord(Map<String, dynamic> record) {
+    return {
+      ...record,
+      'water_level': record['WaterLevel'] ?? record['water_level'],
+      'temperature': record['Temperature'] ?? record['temperature'],
+      'humidity': record['Humidity'] ?? record['humidity'],
+      'image_risk_score': record['ImageRiskScore'] ?? record['image_risk_score'],
+      'risk_score': record['RiskScore'] ?? record['risk_score'],
+      'risk_level': record['RiskLabel'] ?? record['risk_level'] ?? 'unknown',
+      'timestamp': record['Timestamp'] ?? record['timestamp'],
+      'alerts': record['Reasons'] ?? record['alerts'] ?? const <String>[],
+    };
+  }
+
+  Map<String, dynamic> _normalizeDevice(Map<String, dynamic> device) {
+    return {
+      ...device,
+      'name': device['device_name'] ?? device['name'] ?? 'ESP32 Node',
+      'status': device['status'] ?? 'offline',
+      'rssi': device['wifi_rssi'] ?? device['rssi'],
+      'pump_state': device['pump_state'] ?? 'OFF',
+    };
+  }
   
   /// Get cached data if available and fresh
   Map<String, dynamic>? getCachedData() {
@@ -54,13 +78,18 @@ class ApiService {
       final response = await _dio.get('/api/latest');
       
       if (response.statusCode == 200) {
-        final data = response.data as Map<String, dynamic>;
-        
-        // Check if device is actually connected
-        final device = data['device'] as Map<String, dynamic>?;
-        if (device == null || device.isEmpty) {
-          throw Exception('No hardware device connected');
-        }
+        final rawData = Map<String, dynamic>.from(response.data as Map);
+        final rawRecord = rawData['record'];
+        final rawDevice = rawData['device'];
+        final data = <String, dynamic>{
+          ...rawData,
+          'record': rawRecord is Map
+              ? _normalizeRecord(Map<String, dynamic>.from(rawRecord))
+              : <String, dynamic>{},
+          'device': rawDevice is Map
+              ? _normalizeDevice(Map<String, dynamic>.from(rawDevice))
+              : <String, dynamic>{},
+        };
         
         // Cache the successful response
         _cachedData = data;
@@ -87,7 +116,10 @@ class ApiService {
       );
       
       if (response.statusCode == 200) {
-        return response.data as List<dynamic>;
+        final records = response.data as List<dynamic>;
+        return records.map((record) => _normalizeRecord(
+          Map<String, dynamic>.from(record as Map),
+        )).toList();
       }
       throw Exception('Failed to fetch records');
     } catch (e) {
@@ -113,8 +145,8 @@ class ApiService {
   Future<Map<String, dynamic>> controlPump(bool enable) async {
     try {
       final response = await _dio.post(
-        '/api/pump',
-        data: {'enable': enable},
+        '/api/device/control',
+        data: {'pump_mode': 'manual', 'pump_state': enable ? 'ON' : 'OFF'},
       );
       
       if (response.statusCode == 200) {
@@ -124,6 +156,32 @@ class ApiService {
     } catch (e) {
       throw Exception('API Error: $e');
     }
+  }
+
+  Future<List<dynamic>> getAlerts({String status = 'all'}) async {
+    final response = await _dio.get(
+      '/api/alerts',
+      queryParameters: {'status': status},
+    );
+    return response.data as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> resolveAlert(String alertId, String resolvedBy) async {
+    final response = await _dio.post(
+      '/api/alerts/${Uri.encodeComponent(alertId)}/resolve',
+      data: {'resolved_by': resolvedBy, 'note': 'Resolved from the mobile app.'},
+    );
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  Future<Map<String, dynamic>> simulate(String scenario) async {
+    final response = await _dio.post('/api/simulate', data: {'scenario': scenario});
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  Future<Map<String, dynamic>> getStats() async {
+    final response = await _dio.get('/api/stats');
+    return Map<String, dynamic>.from(response.data as Map);
   }
 
   /// Check hardware connection status (with fast timeout)
@@ -136,11 +194,15 @@ class ApiService {
           sendTimeout: const Duration(seconds: 3),
         ),
       );
-      final data = response.data as Map<String, dynamic>;
+      final data = Map<String, dynamic>.from(response.data as Map);
       
       // Device is connected if we get valid device data
-      final device = data['device'] as Map<String, dynamic>?;
-      final isConnected = device != null && device.isNotEmpty;
+        final rawDevice = data['device'];
+        final device = rawDevice is Map
+          ? _normalizeDevice(Map<String, dynamic>.from(rawDevice))
+          : null;
+        final isConnected = device != null &&
+          device.isNotEmpty && device['status'] == 'connected';
       
       if (isConnected) {
         // Cache successful data
